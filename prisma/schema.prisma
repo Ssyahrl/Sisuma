@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Template {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  namaTemplate String?  @map("nama_template")
+  isiTemplate  String?  @map("isi_template")
+  htmlTemplate String?  @map("html_template")
+  variables    Json?
+  fileUrl      String?  @map("file_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("templates")
+}

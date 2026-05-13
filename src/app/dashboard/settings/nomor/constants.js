@@ -1,12 +1,32 @@
 // app/dashboard/settings/nomor/constants.js
 
+// ==========================================
+// 1. TEMA & WARNA
+// ==========================================
 export const COLORS = {
-  navy:      "#1a2744",
-  gold:      "#c9993a",
+  navy: "#1a2744",
+  gold: "#c9993a",
   goldLight: "#fef3dc",
-  goldDark:  "#92400e",
+  goldDark: "#92400e",
 };
 
+export const CHIP_COLOR = {
+  NOMOR: "#fff",
+  JENIS: "#34d399",
+  TAHUN: "#fbbf24",
+  BULAN_ROMAWI: "#f472b6",
+  BULAN_ANGKA: "#fb7185",
+  SEMESTER: "#fb923c",
+  PREFIX: "#38bdf8",
+};
+
+export const CUSTOM_COLORS = [
+  "#a78bfa", "#60a5fa", "#4ade80", "#f97316", "#e879f9",
+];
+
+// ==========================================
+// 2. KONSTANTA FORMAT NOMOR SURAT
+// ==========================================
 export const DEFAULT_FORMAT = "{JENIS}/{NOMOR_URUT:3}/{BULAN_ROMAWI}/{TAHUN}";
 
 export const SYSTEM_TOKENS = [
@@ -14,40 +34,28 @@ export const SYSTEM_TOKENS = [
 ];
 
 export const SYSTEM_TOKEN_DESC = {
-  NOMOR:        "Nomor urut otomatis (001, 002, ...)",
-  JENIS:        "Kode jenis surat dari template (SK, SP, dll)",
-  TAHUN:        "Tahun 4 digit (2026)",
+  NOMOR: "Nomor urut otomatis (001, 002, ...)",
+  JENIS: "Kode jenis surat dari template (SK, SP, dll)",
+  TAHUN: "Tahun 4 digit (2026)",
   BULAN_ROMAWI: "Bulan romawi (V, VI, ...)",
-  BULAN_ANGKA:  "Bulan 2 digit (05, 06, ...)",
-  SEMESTER:     "Semester aktif (GNP / GNJ)",
-  PREFIX:       "Kode/prefix khusus fakultas",
+  BULAN_ANGKA: "Bulan 2 digit (05, 06, ...)",
+  SEMESTER: "Semester aktif (GNP / GNJ)",
+  PREFIX: "Kode/prefix khusus fakultas",
 };
 
 export const SYSTEM_SAMPLE = {
-  NOMOR:        "001",
-  JENIS:        "SK",
-  TAHUN:        "2026",
+  NOMOR: "001",
+  JENIS: "SK",
+  TAHUN: "2026",
   BULAN_ROMAWI: "V",
-  BULAN_ANGKA:  "05",
-  SEMESTER:     "GNP",
-  PREFIX:       "FBD",
+  BULAN_ANGKA: "05",
+  SEMESTER: "GNP",
+  PREFIX: "FBD",
 };
 
-export const CHIP_COLOR = {
-  NOMOR:        "#fff",
-  JENIS:        "#34d399",
-  TAHUN:        "#fbbf24",
-  BULAN_ROMAWI: "#f472b6",
-  BULAN_ANGKA:  "#fb7185",
-  SEMESTER:     "#fb923c",
-  PREFIX:       "#38bdf8",
-};
-
-export const CUSTOM_COLORS = [
-  "#a78bfa", "#60a5fa", "#4ade80", "#f97316", "#e879f9",
-];
-
-// ─── shared style objects ─────────────────────────────────────────────────────
+// ==========================================
+// 3. STYLE OBJECTS (SHARED)
+// ==========================================
 export const labelStyle = {
   fontSize: 11,
   fontWeight: 500,
@@ -74,7 +82,14 @@ export const inputBase = {
   outline: "none",
 };
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
+// ==========================================
+// 4. HELPER FUNCTIONS
+// ==========================================
+
+/**
+ * Menggabungkan array token dan separator menjadi string format utuh
+ * Contoh: ["JENIS", "NOMOR"] -> "{JENIS}/{NOMOR_URUT:3}"
+ */
 export function tokensToFormatString(tokens, digits, separators) {
   return tokens
     .map((t, i) => {
@@ -84,29 +99,42 @@ export function tokensToFormatString(tokens, digits, separators) {
     .join("");
 }
 
+/**
+ * Memecah string format (misal: "{JENIS}/{NOMOR_URUT:3}") menjadi array tokens dan separators
+ * Output: { tokens: ["JENIS", "NOMOR"], separators: ["/"], digits: 3 }
+ */
 export function parseFormatString(str) {
   const tokenMatches = [];
   const separatorMatches = [];
   const re = /\{([^}:]+)(?::(\d+))?\}([^{]*)/g;
   let m;
+  
   while ((m = re.exec(str)) !== null) {
     tokenMatches.push(m[1] === "NOMOR_URUT" ? "NOMOR" : m[1]);
     if (m[3]) separatorMatches.push(m[3]);
   }
+  
   const d = str.match(/\{NOMOR_URUT:(\d+)\}/);
+  
   return {
-    tokens:     tokenMatches,
+    tokens: tokenMatches,
     separators: separatorMatches,
-    digits:     d ? parseInt(d[1]) : 3,
+    digits: d ? parseInt(d[1]) : 3,
   };
 }
 
+/**
+ * Mendapatkan warna background (chip) untuk tampilan visual dari sebuah token
+ */
 export function getTokenColor(name, customTokens = []) {
   if (CHIP_COLOR[name]) return CHIP_COLOR[name];
   const idx = customTokens.findIndex((t) => t.name === name);
   return CUSTOM_COLORS[idx % CUSTOM_COLORS.length] || "#fff";
 }
 
+/**
+ * Mendapatkan contoh nilai (dummy value) teks dari sebuah token untuk keperluan live preview
+ */
 export function getTokenSample(name, customTokens = []) {
   if (SYSTEM_SAMPLE[name]) return SYSTEM_SAMPLE[name];
   return customTokens.find((t) => t.name === name)?.value || name;

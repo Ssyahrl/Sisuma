@@ -5,15 +5,62 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, CheckCircle, XCircle, Printer, Clock, MessageSquare } from "lucide-react";
 
+// ==========================================
+// KONSTANTA & PEMETAAN 
+// (Dipindah ke luar agar tidak dibuat ulang setiap kali halaman re-render)
+// ==========================================
+
+const ROLE_MAP = {
+  pending_admin: "admin",
+  pending_sekretaris: "sekretaris",
+  pending_wakil: "warek",
+  pending_rektor: "rektor",
+};
+
+const DB_COLUMN_MAP = {
+  admin: "catatan_admin",
+  sekretaris: "catatan_sekretaris",
+  warek: "catatan_wakil_rektor",
+  rektor: "catatan_rektor",
+};
+
+const LABEL_MAP = {
+  fakultas: "Fakultas",
+  admin: "Admin",
+  sekretaris: "Sekretaris",
+  warek: "Wakil Rektor",
+  rektor: "Rektor",
+};
+
+const STATUS_COLOR = {
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+  pending: "bg-yellow-100 text-yellow-700",
+  waiting: "bg-gray-100 text-gray-400",
+};
+
+const NEXT_ROLE_MAP = {
+  pending_sekretaris: "sekretaris",
+  pending_wakil: "warek",
+  pending_rektor: "rektor",
+};
+
 export default function ApprovalDetailPage() {
+  // ==========================================
+  // 1. INISIALISASI STATE & HOOKS
+  // ==========================================
   const router = useRouter();
   const { id } = useParams();
+  
   const [surat, setSurat] = useState(null);
   const [approvalSteps, setApprovalSteps] = useState([]);
   const [catatan, setCatatan] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // ==========================================
+  // 2. MENGAMBIL DATA DARI DATABASE
+  // ==========================================
   useEffect(() => {
     async function fetchSurat() {
       setLoading(true);
@@ -41,62 +88,40 @@ export default function ApprovalDetailPage() {
       setApprovalSteps(steps || []);
       setLoading(false);
     }
-    fetchSurat();
+
+    if (id) {
+      fetchSurat();
+    }
   }, [id, router]);
 
-  const getCurrentRole = (status) => {
-    const map = {
-      pending_admin: "admin",
-      pending_sekretaris: "sekretaris",
-      pending_wakil: "warek",
-      pending_rektor: "rektor",
-    };
-    return map[status] || null;
-  };
-
-  const currentRole = getCurrentRole(surat?.status);
+  // ==========================================
+  // 3. LOGIKA ALUR PERSETUJUAN
+  // ==========================================
+  const currentRole = ROLE_MAP[surat?.status] || null;
   const canAct = !!currentRole;
-
-  // ✅ Fix: mapping kolom DB yang konsisten
-  const DB_COLUMN_MAP = {
-    admin: "catatan_admin",
-    sekretaris: "catatan_sekretaris",
-    warek: "catatan_wakil_rektor", // ← fix, sesuai kolom DB
-    rektor: "catatan_rektor",
-  };
-
-  const LABEL_MAP = {
-    fakultas: "Fakultas",
-    admin: "Admin",
-    sekretaris: "Sekretaris",
-    warek: "Wakil Rektor",
-    rektor: "Rektor",
-  };
-
-  const STATUS_COLOR = {
-    approved: "bg-green-100 text-green-700",
-    rejected: "bg-red-100 text-red-700",
-    pending: "bg-yellow-100 text-yellow-700",
-    waiting: "bg-gray-100 text-gray-400",
-  };
 
   const getNextStatus = () => {
     const flow = surat?.templates?.approval_flow || [];
-    if (surat.status === "pending_admin") {
+    
+    if (surat?.status === "pending_admin") {
       if (flow.includes("SEKRETARIS")) return "pending_sekretaris";
       if (flow.includes("WAREK")) return "pending_wakil";
       if (flow.includes("REKTOR")) return "pending_rektor";
     }
-    if (surat.status === "pending_sekretaris") {
+    if (surat?.status === "pending_sekretaris") {
       if (flow.includes("WAREK")) return "pending_wakil";
       if (flow.includes("REKTOR")) return "pending_rektor";
     }
-    if (surat.status === "pending_wakil") {
+    if (surat?.status === "pending_wakil") {
       if (flow.includes("REKTOR")) return "pending_rektor";
     }
+    
     return "approved";
   };
 
+  // ==========================================
+  // AKSI: SETUJUI & TERUSKAN
+  // ==========================================
   const handleTeruskan = async () => {
     if (!canAct) return;
     setSubmitting(true);
@@ -107,24 +132,24 @@ export default function ApprovalDetailPage() {
 
     try {
       const dbCol = DB_COLUMN_MAP[currentRole];
+      
+      // Update data surat
       const { error: errSurat } = await supabase
         .from("surat")
         .update({ status: nextStatus, updated_at: now, [dbCol]: cleanCatatan })
         .eq("id", id);
+        
       if (errSurat) throw errSurat;
 
+      // Tandai step approval saat ini sebagai selesai
       await supabase
         .from("approval_steps")
         .update({ status: "approved", catatan: cleanCatatan, updated_at: now })
         .eq("surat_id", id)
         .eq("role", currentRole);
 
-      const nextRoleMap = {
-        pending_sekretaris: "sekretaris",
-        pending_wakil: "warek",
-        pending_rektor: "rektor",
-      };
-      const nextRole = nextRoleMap[nextStatus];
+      // Siapkan step approval untuk pemeriksa selanjutnya
+      const nextRole = NEXT_ROLE_MAP[nextStatus];
       if (nextRole) {
         await supabase
           .from("approval_steps")
@@ -141,19 +166,26 @@ export default function ApprovalDetailPage() {
     }
   };
 
+  // ==========================================
+  // AKSI: TOLAK SURAT
+  // ==========================================
   const handleTolak = async () => {
     if (!canAct) return;
     if (!catatan.trim()) return alert("Wajib memberikan alasan penolakan.");
+    
     setSubmitting(true);
     const now = new Date().toISOString();
 
     try {
       const dbCol = DB_COLUMN_MAP[currentRole];
+      
+      // Update data surat menjadi ditolak
       await supabase
         .from("surat")
         .update({ status: "rejected", updated_at: now, [dbCol]: catatan.trim() })
         .eq("id", id);
 
+      // Update riwayat step menjadi ditolak
       await supabase
         .from("approval_steps")
         .update({ status: "rejected", catatan: catatan.trim(), updated_at: now })
@@ -168,6 +200,9 @@ export default function ApprovalDetailPage() {
     }
   };
 
+  // ==========================================
+  // 4. RENDER TAMPILAN UI
+  // ==========================================
   if (loading) return <div className="p-20 text-center text-gray-400 font-medium">Memproses data...</div>;
 
   return (
@@ -199,7 +234,7 @@ export default function ApprovalDetailPage() {
               </div>
             </div>
 
-            {/* ✅ Catatan Fakultas */}
+            {/* Catatan Fakultas */}
             {surat.catatan_fakultas && (
               <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl">
                 <p className="text-[10px] font-bold text-blue-500 uppercase mb-1">Pesan dari Fakultas</p>
@@ -208,7 +243,7 @@ export default function ApprovalDetailPage() {
             )}
           </div>
 
-          {/* ✅ History Catatan per Approval */}
+          {/* History Catatan per Approval */}
           {approvalSteps.filter(s => s.catatan).length > 0 && (
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-3">
               <div className="flex items-center gap-2">

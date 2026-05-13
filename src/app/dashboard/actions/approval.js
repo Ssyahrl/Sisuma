@@ -3,11 +3,13 @@
 
 import { createClient } from "@supabase/supabase-js";
 
+// Inisialisasi Supabase Admin Client
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Pemetaan kolom catatan berdasarkan role
 const CATATAN_COL = {
   ADMIN:      "catatan_admin",
   SEKRETARIS: "catatan_sekretaris",
@@ -15,6 +17,7 @@ const CATATAN_COL = {
   REKTOR:     "catatan_rektor",
 };
 
+// Pemetaan status pending berdasarkan role
 const PENDING_STATUS = {
   ADMIN:      "pending_admin",
   SEKRETARIS: "pending_sekretaris",
@@ -22,13 +25,18 @@ const PENDING_STATUS = {
   REKTOR:     "pending_rektor",
 };
 
+// Urutan alur persetujuan (approval flow) berdasarkan tujuan surat
 const FULL_CHAINS = {
   SEKRETARIS: ["ADMIN", "SEKRETARIS"],
   WAREK:      ["ADMIN", "SEKRETARIS", "WAREK"],
   REKTOR:     ["ADMIN", "SEKRETARIS", "WAREK", "REKTOR"],
 };
 
+/**
+ * Fungsi utama untuk memproses persetujuan (approve/reject) surat.
+ */
 export async function processApproval(suratId, role, action, catatan = "") {
+  // 1. Ambil data surat beserta template-nya
   const { data: surat, error: suratErr } = await supabaseAdmin
     .from("surat")
     .select("id, status, tujuan, nomor_surat, template_id, user_id, templates(approval_flow, nama_template, jenis_surat)")
@@ -37,18 +45,22 @@ export async function processApproval(suratId, role, action, catatan = "") {
 
   if (suratErr || !surat) throw new Error("Surat tidak ditemukan");
 
+  // 2. Tentukan alur persetujuan
   const flow = FULL_CHAINS[surat.tujuan] || ["ADMIN"];
 
-  console.log("tujuan:", surat.tujuan, "flow:", flow);
+  // Matikan console.log untuk versi production agar terminal lebih bersih
+  // console.log("tujuan:", surat.tujuan, "flow:", flow);
 
   if (!flow.includes(role.toUpperCase())) {
     throw new Error(`Role ${role} tidak ada dalam alur persetujuan surat ini`);
   }
 
-  const catatanCol   = CATATAN_COL[role.toUpperCase()];
-  const now          = new Date().toISOString();
+  const catatanCol = CATATAN_COL[role.toUpperCase()];
+  const now        = new Date().toISOString();
 
-  // ── TOLAK ────────────────────────────────────────────────────────────────────
+  // ==========================================
+  // AKSI: TOLAK SURAT (REJECT)
+  // ==========================================
   if (action === "reject") {
     const { error } = await supabaseAdmin
       .from("surat")
@@ -60,7 +72,7 @@ export async function processApproval(suratId, role, action, catatan = "") {
 
     if (error) throw new Error("Gagal menolak surat: " + error.message);
 
-    // ✅ Upsert — aman meski record belum ada
+    // Upsert — aman meski record belum ada
     const { error: stepErr } = await supabaseAdmin
       .from("approval_steps")
       .upsert(
@@ -79,7 +91,10 @@ export async function processApproval(suratId, role, action, catatan = "") {
     return { ok: true, action: "rejected" };
   }
 
-  // ── APPROVE — tandai step ini selesai ────────────────────────────────────────
+  // ==========================================
+  // AKSI: SETUJUI SURAT (APPROVE)
+  // ==========================================
+  // Tandai langkah persetujuan saat ini sebagai selesai
   const { error: approveStepErr } = await supabaseAdmin
     .from("approval_steps")
     .upsert(
@@ -95,10 +110,11 @@ export async function processApproval(suratId, role, action, catatan = "") {
 
   if (approveStepErr) throw new Error("Gagal update approval_steps (approve): " + approveStepErr.message);
 
-  // ── Cari step berikutnya ─────────────────────────────────────────────────────
+  // Cari siapa yang harus menyetujui selanjutnya
   const currentIdx = flow.indexOf(role.toUpperCase());
   const nextRole   = flow[currentIdx + 1] || null;
 
+  // Jika masih ada tahap selanjutnya (Forward)
   if (nextRole) {
     const newStatus = PENDING_STATUS[nextRole];
 
@@ -112,7 +128,7 @@ export async function processApproval(suratId, role, action, catatan = "") {
 
     if (error) throw new Error("Gagal meneruskan surat: " + error.message);
 
-    // ✅ Upsert step berikutnya jadi "pending"
+    // Upsert step berikutnya jadi "pending"
     const { error: nextStepErr } = await supabaseAdmin
       .from("approval_steps")
       .upsert(
@@ -130,10 +146,12 @@ export async function processApproval(suratId, role, action, catatan = "") {
     return { ok: true, action: "forwarded", nextRole };
   }
 
-  // ── Step TERAKHIR — generate nomor & set approved ────────────────────────────
+  // ==========================================
+  // TAHAP TERAKHIR: Pengesahan Surat & Generate Nomor
+  // ==========================================
   const nomor = await generateNomor(suratId, surat);
 
-  const { error } = await supabaseAdmin
+  const { error: finalErr } = await supabaseAdmin
     .from("surat")
     .update({
       status:      "approved",
@@ -142,17 +160,19 @@ export async function processApproval(suratId, role, action, catatan = "") {
     })
     .eq("id", suratId);
 
-  if (error) throw new Error("Gagal mengesahkan surat: " + error.message);
+  if (finalErr) throw new Error("Gagal mengesahkan surat: " + finalErr.message);
 
   return { ok: true, action: "approved", nomor_surat: nomor };
 }
 
-// ── Generate nomor surat ──────────────────────────────────────────────────────
+/**
+ * Fungsi bantuan untuk membuat format nomor surat secara otomatis.
+ */
 async function generateNomor(suratId, surat) {
-  const templateId = surat.template_id;
-  const userId     = surat.user_id;
-  const tahun      = new Date().getFullYear();
+  const userId = surat.user_id;
+  const tahun  = new Date().getFullYear();
 
+  // Ambil profil pembuat surat untuk mengecek role
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("role, nama")
@@ -161,10 +181,12 @@ async function generateNomor(suratId, surat) {
 
   const isFakultas = profile?.role === "FAKULTAS";
 
+  // Bersihkan nama fakultas untuk dijadikan slug (hanya jika role = FAKULTAS)
   const slug = isFakultas
     ? (profile.nama || "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "")
     : null;
 
+  // Tentukan pengaturan mana yang mau diambil dari database
   const keysToFetch = isFakultas
     ? [`fakultas_${slug}_nomor_format`, `fakultas_${slug}_prefix`, `fakultas_${slug}_reset_logic`]
     : ["nomor_surat_format", "nomor_reset_logic", "nomor_custom_tokens"];
@@ -174,6 +196,7 @@ async function generateNomor(suratId, surat) {
     .select("key, value")
     .in("key", keysToFetch);
 
+  // Ubah array data menjadi object (key-value pair)
   const s = Object.fromEntries((rows || []).map((r) => [r.key, r.value]));
 
   let fmt, prefix;
@@ -189,6 +212,7 @@ async function generateNomor(suratId, surat) {
     ? JSON.parse(s["nomor_custom_tokens"])
     : [];
 
+  // Panggil fungsi RPC dari Supabase untuk mendapatkan nomor urut selanjutnya
   const { data: nextNumber, error: counterErr } = isFakultas
     ? await supabaseAdmin.rpc("get_next_nomor_fakultas", {
         p_user_id: userId,
@@ -200,6 +224,7 @@ async function generateNomor(suratId, surat) {
 
   if (counterErr) throw new Error("Gagal generate nomor: " + counterErr.message);
 
+  // Persiapkan variabel untuk mengganti token pada format string
   const now          = new Date();
   const BULAN_ROMAWI = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"][now.getMonth()];
   const BULAN_ANGKA  = String(now.getMonth() + 1).padStart(2, "0");
@@ -211,6 +236,7 @@ async function generateNomor(suratId, surat) {
   const systemTokens = { JENIS, TAHUN, BULAN_ROMAWI, BULAN_ANGKA, SEMESTER, PREFIX };
   const customMap    = Object.fromEntries(customTokens.map((t) => [t.name, t.value]));
 
+  // Ganti token seperti {TAHUN} atau {NOMOR_URUT:3} menjadi nilai aslinya
   const nomor = fmt.replace(/\{([^}:]+)(?::(\d+))?\}/g, (_, name, digits) => {
     if (name === "NOMOR_URUT") {
       return String(nextNumber).padStart(parseInt(digits) || 3, "0");

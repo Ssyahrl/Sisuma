@@ -1,10 +1,13 @@
 "use client";
 // app/dashboard/settings/nomor/FakultasSection.jsx
+
 import { useState, useEffect, useCallback } from "react";
 import { loadFakultasSettings, resetAllFakultasCounters } from "./actions";
 import { COLORS, DEFAULT_FORMAT } from "./constants";
 
-// ─── FakultasCard ─────────────────────────────────────────────────────────────
+// ==========================================
+// 1. KOMPONEN: KARTU FAKULTAS (FakultasCard)
+// ==========================================
 function FakultasCard({ f, nextNumber = "001" }) {
   const displayName = f.slug.replace(/_/g, " ");
   const prefix      = f.prefix || f.slug;
@@ -17,19 +20,26 @@ function FakultasCard({ f, nextNumber = "001" }) {
     .replace("{TAHUN}",        new Date().getFullYear().toString());
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "12px 16px", background: "#fff",
-      border: "0.5px solid #d1fae5", borderRadius: 10, marginBottom: 8,
-    }}>
+    <div
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "12px 16px", background: "#fff",
+        border: "0.5px solid #d1fae5", borderRadius: 10, marginBottom: 8,
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: 8,
-          background: "#d1fae5", border: "1px solid #6ee7b7",
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-        }}>
+        {/* Ikon Gedung */}
+        <div
+          style={{
+            width: 30, height: 30, borderRadius: 8,
+            background: "#d1fae5", border: "1px solid #6ee7b7",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+          }}
+        >
           🏛
         </div>
+        
+        {/* Info Fakultas */}
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: "#065f46", textTransform: "capitalize" }}>
             {displayName}
@@ -42,15 +52,19 @@ function FakultasCard({ f, nextNumber = "001" }) {
           </div>
         </div>
       </div>
+      
+      {/* Preview Nomor Urut */}
       <div style={{ textAlign: "right" }}>
         <div style={{ fontFamily: "monospace", fontSize: 11, color: "#64748b" }}>
           {DEFAULT_FORMAT}
         </div>
-        <div style={{
-          fontFamily: "monospace", fontSize: 13, fontWeight: 700,
-          color: nextNumber === "001" ? "#059669" : "#065f46",
-          marginTop: 2, transition: "color .3s",
-        }}>
+        <div
+          style={{
+            fontFamily: "monospace", fontSize: 13, fontWeight: 700,
+            color: nextNumber === "001" ? "#059669" : "#065f46",
+            marginTop: 2, transition: "color .3s",
+          }}
+        >
           No berikut nya : {contoh}
         </div>
       </div>
@@ -58,21 +72,22 @@ function FakultasCard({ f, nextNumber = "001" }) {
   );
 }
 
-// ─── FakultasSection ──────────────────────────────────────────────────────────
+// ==========================================
+// 2. KOMPONEN UTAMA: FAKULTAS SECTION
+// ==========================================
 export default function FakultasSection() {
+  // STATE MANAGEMENT
   const [fakultasList, setFakultasList] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [resetting,    setResetting]    = useState(false);
-  const [resetMsg,     setResetMsg]     = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [resetting, setResetting]       = useState(false);
+  const [resetMsg, setResetMsg]         = useState(null);
 
-
+  // DATA FETCHING
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await loadFakultasSettings();
       setFakultasList(data);
-      // Ambil nextNumber dari data (semua pakai counter GLOBAL)
-
     } catch (e) {
       console.error(e);
     } finally {
@@ -80,15 +95,19 @@ export default function FakultasSection() {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
+  // HANDLER: RESET SEMUA COUNTER FAKULTAS
   const handleResetSemua = async () => {
     if (!confirm("Reset semua nomor urut fakultas ke 001? Surat lama tidak terpengaruh.")) return;
+    
     setResetting(true);
     try {
       const res = await resetAllFakultasCounters();
       if (res.ok) {
-        await loadData(); // ✅ reload dari DB, bukan hardcode "001"
+        await loadData(); // Reload dari DB agar UI ter-update ke 001
       }
       setResetMsg({ ok: res.ok, msg: res.message });
     } catch (e) {
@@ -99,8 +118,10 @@ export default function FakultasSection() {
     }
   };
 
+  // RENDER UI
   return (
     <div>
+      {/* Divider / Judul Seksi */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "28px 0 16px", padding: "0 2px" }}>
         <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.07)" }} />
         <span style={{ fontSize: 11, fontWeight: 700, color: "#10b981", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
@@ -109,6 +130,7 @@ export default function FakultasSection() {
         <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.07)" }} />
       </div>
 
+      {/* Banner Informasi Format Default */}
       <div style={{ padding: "10px 14px", background: "#f0fdf4", border: "0.5px solid #bbf7d0", borderRadius: 8, fontSize: 12, color: "#166534", marginBottom: 14 }}>
         Format nomor surat fakultas:{" "}
         <span style={{ fontFamily: "monospace", fontWeight: 600 }}>{DEFAULT_FORMAT}</span>
@@ -117,6 +139,7 @@ export default function FakultasSection() {
         </div>
       </div>
 
+      {/* Area Daftar Fakultas (State Loading / Kosong / Terisi) */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "24px 0", fontSize: 12, color: "#94a3b8" }}>
           Memuat data fakultas...
@@ -127,10 +150,11 @@ export default function FakultasSection() {
         </div>
       ) : (
         <>
-                {fakultasList.map((f) => (
-                <FakultasCard key={f.slug} f={f} nextNumber={f.nextNumber ?? "001"} />
-                ))}
+          {fakultasList.map((f) => (
+            <FakultasCard key={f.slug} f={f} nextNumber={f.nextNumber ?? "001"} />
+          ))}
 
+          {/* Tombol Reset */}
           <button
             onClick={handleResetSemua}
             disabled={resetting}
@@ -148,14 +172,17 @@ export default function FakultasSection() {
             {resetting ? "Mereset..." : "↺ Reset Semua Nomor Urut Fakultas ke 001"}
           </button>
 
+          {/* Pesan Sukses / Error Reset */}
           {resetMsg && (
-            <div style={{
-              marginTop: 8, padding: "10px 14px", borderRadius: 8,
-              fontSize: 12, fontWeight: 500,
-              background: resetMsg.ok ? "#f0fdf4" : "#fef2f2",
-              border: `0.5px solid ${resetMsg.ok ? "#bbf7d0" : "#fecaca"}`,
-              color:  resetMsg.ok ? "#166534" : "#991b1b",
-            }}>
+            <div
+              style={{
+                marginTop: 8, padding: "10px 14px", borderRadius: 8,
+                fontSize: 12, fontWeight: 500,
+                background: resetMsg.ok ? "#f0fdf4" : "#fef2f2",
+                border: `0.5px solid ${resetMsg.ok ? "#bbf7d0" : "#fecaca"}`,
+                color:  resetMsg.ok ? "#166534" : "#991b1b",
+              }}
+            >
               {resetMsg.ok ? "✓ " : "✕ "}{resetMsg.msg}
             </div>
           )}

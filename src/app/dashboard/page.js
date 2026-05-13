@@ -185,12 +185,7 @@ export default function DashboardPage() {
                 Pending Approvals
               </h2>
 
-              <span
-                className="text-sm text-blue-600 hover:underline cursor-pointer font-medium"
-                onClick={() => router.push("/dashboard/approvals")}
-              >
-                View All Requests →
-              </span>
+              
             </div>
 
             {loading ? (

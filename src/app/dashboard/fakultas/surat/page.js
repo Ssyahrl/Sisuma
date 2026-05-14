@@ -1,9 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { FileText, Download } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
 // ==========================================
 // UTILITY & KONSTANTA
@@ -15,22 +14,22 @@ const categoryColor = {
   KT: { bg: "#e0f2fe", color: "#0369a1" },
 };
 
-export default function BuatSuratFakultas() {
-  // ==========================================
-  // 1. STATE & HOOKS
-  // ==========================================
+// ==========================================
+// KOMPONEN INNER — menggunakan useSearchParams
+// Harus dipisah agar bisa dibungkus <Suspense>
+// ==========================================
+function BuatSuratFakultasInner() {
   const searchParams = useSearchParams();
 
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState(null);
   const [values, setValues] = useState({});
   const [search, setSearch] = useState("");
-  
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // ==========================================
-  // 2. FUNGSI & HANDLER
+  // FUNGSI & HANDLER
   // ==========================================
   const handleSelect = useCallback((t) => {
     setSelected(t);
@@ -38,49 +37,47 @@ export default function BuatSuratFakultas() {
   }, []);
 
   // ==========================================
-  // 3. MENGAMBIL DATA TEMPLATE (EFFECTS)
+  // MENGAMBIL DATA TEMPLATE
   // ==========================================
   useEffect(() => {
+    // Ambil template_id dari URL sekali saja
+    const tid = searchParams.get("template_id");
+
     fetch("/api/templates/public")
       .then((r) => r.json())
       .then((j) => {
         const data = j.data || [];
         setTemplates(data);
-        
-        // Auto-select template jika ada ID di URL
-        const tid = searchParams.get("template_id");
+
         if (tid) {
           const found = data.find((t) => t.id === tid);
           if (found) handleSelect(found);
         }
       })
       .catch(console.error);
-  }, [searchParams, handleSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dijalankan sekali — searchParams & handleSelect stabil
 
   // ==========================================
-  // 4. COMPUTED VALUES (Filter & Variabel)
+  // COMPUTED VALUES
   // ==========================================
-  // Filter template berdasarkan kolom pencarian
   const filtered = templates.filter((t) =>
     stripExt(t.nama_template).toLowerCase().includes(search.toLowerCase())
   );
 
-  // Mengambil daftar variabel dari template (mengabaikan "No")
   const fields = (
     typeof selected?.variables === "string"
       ? JSON.parse(selected.variables)
       : selected?.variables || []
   ).filter((v) => v !== "No");
 
-  // Generate HTML untuk Preview Dokumen
   const previewHtml = useMemo(() => {
     if (!selected?.html_template) {
       return "<p style='color:#aaa;font-size:13px;text-align:center;margin-top:40px'>Preview tidak tersedia</p>";
     }
-      
+
     let html = selected.html_template;
-    
-    // Ganti {variabel} dengan nilai yang diinputkan pengguna (di-highlight kuning)
+
     Object.entries(values).forEach(([key, val]) => {
       if (val) {
         html = html.replaceAll(
@@ -89,45 +86,48 @@ export default function BuatSuratFakultas() {
         );
       }
     });
-    
-    // Sisa {variabel} yang belum diisi (di-highlight merah)
+
     html = html.replace(
       /{(.*?)}/g,
       `<span style="background:#fee2e2;color:#b91c1c;padding:0 2px;border-radius:3px;font-style:italic">{$1}</span>`
     );
-    
+
     return html;
   }, [selected?.html_template, values]);
 
   // ==========================================
-  // 5. AKSI: SIMPAN & GENERATE
+  // AKSI: SIMPAN & GENERATE
   // ==========================================
   const handleSimpan = async () => {
     if (!selected || saving) return;
-    
+
     const unfilled = fields.filter((f) => !values[f]);
     if (unfilled.length > 0) {
       alert(`Variabel belum diisi: ${unfilled.join(", ")}`);
       return;
     }
-    
+
     if (!selected.approval_flow || selected.approval_flow.length === 0) {
-      alert("Template ini belum memiliki alur persetujuan. Hubungi Admin untuk mengatur approval flow terlebih dahulu.");
+      alert(
+        "Template ini belum memiliki alur persetujuan. Hubungi Admin untuk mengatur approval flow terlebih dahulu."
+      );
       return;
     }
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Import supabase secara dinamis agar tidak dieksekusi di sisi server
+      const { supabase } = await import("@/lib/supabase");
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Sesi habis, silakan login ulang.");
 
-      // Buat isi dokumen final
       let isi_final = selected.html_template || "";
       Object.entries(values).forEach(([key, val]) => {
         isi_final = isi_final.replaceAll(`{${key}}`, val);
       });
 
-      // Simpan ke database sebagai draft
       const res = await fetch("/api/surat/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -139,7 +139,7 @@ export default function BuatSuratFakultas() {
           is_draft: true,
         }),
       });
-      
+
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
 
@@ -159,7 +159,7 @@ export default function BuatSuratFakultas() {
       alert(`Variabel belum diisi: ${unfilled.join(", ")}`);
       return;
     }
-    
+
     setLoading(true);
     try {
       const res = await fetch("/api/templates/generate", {
@@ -167,10 +167,9 @@ export default function BuatSuratFakultas() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file_url: selected.file_url, values }),
       });
-      
+
       if (!res.ok) throw new Error("Gagal generate");
-      
-      // Download file DOCX
+
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -178,15 +177,15 @@ export default function BuatSuratFakultas() {
       a.download = `${stripExt(selected.nama_template)}.docx`;
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch {
-      alert("Gagal generate dokumen");
+    } catch (err) {
+      alert("Gagal generate dokumen: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   // ==========================================
-  // 6. RENDER TAMPILAN UI
+  // RENDER
   // ==========================================
   return (
     <div
@@ -214,21 +213,12 @@ export default function BuatSuratFakultas() {
             borderBottom: "0.5px solid #e5e7eb",
           }}
         >
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "#111",
-              marginBottom: 2,
-            }}
-          >
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>
             Buat Surat
           </div>
-          <div style={{ fontSize: 11, color: "#aaa" }}>
-            Pilih template dari admin
-          </div>
+          <div style={{ fontSize: 11, color: "#aaa" }}>Pilih template dari admin</div>
         </div>
-        
+
         {/* Input Pencarian */}
         <div style={{ padding: "10px 12px" }}>
           <div
@@ -242,14 +232,7 @@ export default function BuatSuratFakultas() {
               padding: "6px 10px",
             }}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#aaa"
-              strokeWidth="2"
-            >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
@@ -268,18 +251,11 @@ export default function BuatSuratFakultas() {
             />
           </div>
         </div>
-        
+
         {/* List Template */}
         <div style={{ flex: 1, overflowY: "auto", padding: "4px 10px 14px" }}>
           {filtered.length === 0 && (
-            <p
-              style={{
-                fontSize: 12,
-                color: "#aaa",
-                textAlign: "center",
-                marginTop: 24,
-              }}
-            >
+            <p style={{ fontSize: 12, color: "#aaa", textAlign: "center", marginTop: 24 }}>
               Belum ada template
             </p>
           )}
@@ -287,7 +263,7 @@ export default function BuatSuratFakultas() {
             const cat = t.jenis_surat?.toUpperCase() || "SK";
             const catStyle = categoryColor[cat] ?? categoryColor["SK"];
             const isActive = selected?.id === t.id;
-            
+
             return (
               <div
                 key={t.id}
@@ -316,19 +292,16 @@ export default function BuatSuratFakultas() {
                 >
                   {cat}
                 </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "#111",
-                    lineHeight: 1.3,
-                  }}
-                >
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#111", lineHeight: 1.3 }}>
                   {stripExt(t.nama_template)}
                 </div>
                 <div style={{ fontSize: 10, color: "#bbb", marginTop: 3 }}>
                   {t.updated_at
-                    ? `Terakhir diubah: ${new Date(t.updated_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
+                    ? `Terakhir diubah: ${new Date(t.updated_at).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}`
                     : "—"}
                 </div>
               </div>
@@ -337,9 +310,8 @@ export default function BuatSuratFakultas() {
         </div>
       </div>
 
-      {/* Panel Utama: Preview & Editor */}
+      {/* Panel Utama */}
       {!selected ? (
-        // State Kosong (Belum memilih template)
         <div
           style={{
             flex: 1,
@@ -363,23 +335,13 @@ export default function BuatSuratFakultas() {
           >
             <FileText size={26} color="#185FA5" />
           </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#333" }}>
-            Pilih Template
-          </div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#333" }}>Pilih Template</div>
           <div style={{ fontSize: 12, color: "#aaa" }}>
             Pilih template surat di sebelah kiri untuk mulai membuat surat
           </div>
         </div>
       ) : (
-        // Mode Editor
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {/* Header Action */}
           <div
             style={{
@@ -397,11 +359,10 @@ export default function BuatSuratFakultas() {
                 Preview: {stripExt(selected.nama_template)}
               </div>
               <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>
-                {fields.filter((f) => values[f]).length}/{fields.length}{" "}
-                variabel terisi
+                {fields.filter((f) => values[f]).length}/{fields.length} variabel terisi
               </div>
             </div>
-            
+
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <button
                 onClick={handleSimpan}
@@ -443,7 +404,7 @@ export default function BuatSuratFakultas() {
           </div>
 
           <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-            {/* Sidebar Variabel (Tengah) */}
+            {/* Sidebar Variabel */}
             <div
               style={{
                 width: 220,
@@ -466,11 +427,9 @@ export default function BuatSuratFakultas() {
               >
                 Variabel
               </div>
-              
+
               {fields.length === 0 ? (
-                <p style={{ fontSize: 12, color: "#aaa" }}>
-                  Tidak ada variabel
-                </p>
+                <p style={{ fontSize: 12, color: "#aaa" }}>Tidak ada variabel</p>
               ) : (
                 fields.map((field) => (
                   <div key={field} style={{ marginBottom: 12 }}>
@@ -489,10 +448,7 @@ export default function BuatSuratFakultas() {
                       type="text"
                       value={values[field] || ""}
                       onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          [field]: e.target.value,
-                        }))
+                        setValues((prev) => ({ ...prev, [field]: e.target.value }))
                       }
                       placeholder={`Isi ${field}`}
                       style={{
@@ -510,7 +466,7 @@ export default function BuatSuratFakultas() {
                   </div>
                 ))
               )}
-              
+
               {fields.length > 0 && (
                 <div
                   style={{
@@ -554,7 +510,7 @@ export default function BuatSuratFakultas() {
               )}
             </div>
 
-            {/* Area Kertas Preview */}
+            {/* Area Preview */}
             <div
               style={{
                 flex: 1,
@@ -584,5 +540,32 @@ export default function BuatSuratFakultas() {
         </div>
       )}
     </div>
+  );
+}
+
+// ==========================================
+// EXPORT DEFAULT — bungkus dengan Suspense
+// Wajib ada agar useSearchParams tidak error saat build
+// ==========================================
+export default function BuatSuratFakultas() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            display: "flex",
+            height: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#aaa",
+            fontSize: 13,
+          }}
+        >
+          Memuat...
+        </div>
+      }
+    >
+      <BuatSuratFakultasInner />
+    </Suspense>
   );
 }

@@ -15,7 +15,7 @@ export const metadata = {
   title: "Sisuma",
   description: "sistem informasi surat menyurat ma'soem",
   icons: {
-    icon: "/public/images/Logo.svg"
+    icon: "/images/Logo.svg"
   },
 };
 

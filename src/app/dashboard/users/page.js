@@ -1,8 +1,13 @@
 "use client";
-import { supabase } from "@/lib/supabase";
+
+import { Pencil, Trash2, X, Check, FileText } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
+import { supabase } from "@/lib/supabase";
 import { getUsers, createUser, updateUserRole, deleteUser, updateUserPassword } from "./actions";
 
+// ==========================================
+// KONSTANTA & PENGATURAN TAMPILAN
+// ==========================================
 const ROLES = ["ADMIN", "SEKRETARIS", "WAREK", "REKTOR", "FAKULTAS"];
 
 const ROLE_STYLE = {
@@ -13,10 +18,39 @@ const ROLE_STYLE = {
   FAKULTAS:   { bg: "bg-green-500/15",  text: "text-green-400",  border: "border-green-500/30"  },
 };
 
+// ==========================================
+// ICONS (SVGs)
+// ==========================================
+const PencilIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+);
+
+const EyeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+// ==========================================
+// UI COMPONENTS KECIL
+// ==========================================
 function Avatar({ nama }) {
   const initials = nama
     ? nama.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
     : "?";
+    
   return (
     <div className="w-9 h-9 rounded-full bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center text-xs font-semibold text-slate-200 shrink-0">
       {initials}
@@ -43,21 +77,24 @@ function Toast({ toast, onClose }) {
   if (!toast) return null;
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium transition-all
-      ${toast.ok
-        ? "bg-green-950 border-green-700 text-green-300"
-        : "bg-red-950 border-red-700 text-red-300"}`}>
+    <div
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium transition-all
+      ${toast.ok ? "bg-green-950 border-green-700 text-green-300" : "bg-red-950 border-red-700 text-red-300"}`}
+    >
       <span>{toast.ok ? "✓" : "✕"}</span>
       <span>{toast.message}</span>
     </div>
   );
 }
 
+// ==========================================
+// MODAL: TAMBAH USER BARU
+// ==========================================
 function TambahUserModal({ open, onClose, onSuccess }) {
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("");
+  const [error, setError]            = useState("");
+  const [showPass, setShowPass]      = useState(false);
+  const [selectedRole, setSelectedRole]= useState("");
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -83,6 +120,8 @@ function TambahUserModal({ open, onClose, onSuccess }) {
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
+        
+        {/* Header Modal */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/60">
           <div>
             <h2 className="text-base font-semibold text-slate-100">Tambah User Baru</h2>
@@ -91,6 +130,7 @@ function TambahUserModal({ open, onClose, onSuccess }) {
           <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors text-lg leading-none">✕</button>
         </div>
 
+        {/* Body Modal (Form) */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5">Nama Lengkap</label>
@@ -146,7 +186,7 @@ function TambahUserModal({ open, onClose, onSuccess }) {
               className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition appearance-none"
             >
               <option value="">— Pilih role —</option>
-              {ROLES.filter(r => r !== "ADMIN").map((r) => (
+              {ROLES.filter((r) => r !== "ADMIN").map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
@@ -173,12 +213,14 @@ function TambahUserModal({ open, onClose, onSuccess }) {
             </div>
           )}
 
+          {/* Pesan Error */}
           {error && (
             <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
               <span>⚠</span> {error}
             </div>
           )}
 
+          {/* Tombol Modal */}
           <div className="flex gap-3 pt-1">
             <button
               type="button"
@@ -201,6 +243,9 @@ function TambahUserModal({ open, onClose, onSuccess }) {
   );
 }
 
+// ==========================================
+// MODAL: KONFIRMASI HAPUS USER
+// ==========================================
 function DeleteConfirmModal({ user, onClose, onSuccess }) {
   const [isPending, startTransition] = useTransition();
 
@@ -228,7 +273,10 @@ function DeleteConfirmModal({ user, onClose, onSuccess }) {
           </p>
         </div>
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-lg border border-slate-600 text-sm text-slate-400 hover:text-slate-200 transition">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-lg border border-slate-600 text-sm text-slate-400 hover:text-slate-200 transition"
+          >
             Batal
           </button>
           <button
@@ -244,14 +292,11 @@ function DeleteConfirmModal({ user, onClose, onSuccess }) {
   );
 }
 
-const PencilIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-  </svg>
-);
-
+// ==========================================
+// KOMPONEN UTAMA: USERS PAGE
+// ==========================================
 export default function UsersPage() {
+  // STATE MANAGEMENT
   const [users, setUsers]                 = useState([]);
   const [loading, setLoading]             = useState(true);
   const [search, setSearch]               = useState("");
@@ -263,10 +308,13 @@ export default function UsersPage() {
   const [isPending, startTransition]      = useTransition();
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentRole, setCurrentRole]     = useState(null);
+  
+  // STATE (Ganti Password Inline)
   const [editPassId, setEditPassId]       = useState(null);
   const [newPass, setNewPass]             = useState("");
-  const [showNewPass, setShowNewPass] = useState(false);
+  const [showNewPass, setShowNewPass]     = useState(false);
 
+  // DATA FETCHING
   async function loadUsers() {
     setLoading(true);
     try {
@@ -279,7 +327,9 @@ export default function UsersPage() {
     }
   }
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -292,14 +342,17 @@ export default function UsersPage() {
     });
   }, []);
 
+  // COMPUTED VALUES (Filter Data)
   const filtered = users.filter((u) => {
     const matchSearch = !search ||
       u.nama?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase());
+      
     const matchRole = filterRole === "ALL" || u.role === filterRole;
     return matchSearch && matchRole;
   });
 
+  // HANDLERS
   function handleRoleChange(userId, newRole) {
     startTransition(async () => {
       const res = await updateUserRole(userId, newRole);
@@ -311,10 +364,12 @@ export default function UsersPage() {
     });
   }
 
+  // RENDER UI
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
 
+        {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Manajemen User</h1>
@@ -329,6 +384,7 @@ export default function UsersPage() {
           </button>
         </div>
 
+        {/* Filter Input & Dropdown */}
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
@@ -347,6 +403,7 @@ export default function UsersPage() {
           </select>
         </div>
 
+        {/* Filter Role Cards (Statistik) */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {ROLES.map((role) => {
             const count = users.filter((u) => u.role === role).length;
@@ -365,6 +422,7 @@ export default function UsersPage() {
           })}
         </div>
 
+        {/* Tabel User */}
         <div className="bg-slate-900 border border-slate-700/60 rounded-2xl overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-16 text-slate-500 text-sm gap-2">
@@ -386,6 +444,8 @@ export default function UsersPage() {
               <tbody className="divide-y divide-slate-700/40">
                 {filtered.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-800/40 transition-colors">
+                    
+                    {/* Data User (Avatar + Info) */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <Avatar nama={user.nama} />
@@ -396,6 +456,7 @@ export default function UsersPage() {
                       </div>
                     </td>
 
+                    {/* Role (Bisa di-edit inline) */}
                     <td className="px-5 py-3.5">
                       {editingRole?.userId === user.id ? (
                         <select
@@ -418,59 +479,51 @@ export default function UsersPage() {
                       )}
                     </td>
 
+                    {/* Tombol Aksi (Ganti Password & Hapus) */}
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-2">
 
-                        {/* Pencil: diri sendiri ATAU admin bisa ganti password siapapun */}
+                        {/* Ganti Password Inline (Hanya Admin atau diri sendiri) */}
                         {(user.id === currentUserId || currentRole?.toUpperCase() === "ADMIN") && (
                           editPassId === user.id ? (
                             <div className="flex items-center gap-1.5">
-  <div className="relative">
-    <input
-      type={showNewPass ? "text" : "password"}
-      placeholder="Min. 8 karakter"
-      value={newPass}
-      onChange={(e) => setNewPass(e.target.value)}
-      autoFocus
-      className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 pr-7 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-slate-400 w-40 transition"
-    />
-    <button
-      type="button"
-      onClick={() => setShowNewPass((v) => !v)}
-      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-      title={showNewPass ? "Sembunyikan" : "Tampilkan"}
-    >
-      {showNewPass ? (
-        // Eye Off
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-          <line x1="1" y1="1" x2="23" y2="23"/>
-        </svg>
-      ) : (
-        // Eye
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      )}
-    </button>
-  </div>
-  <button
-    onClick={async () => {
-      const res = await updateUserPassword(user.id, newPass);
-      setToast(res);
-      if (res.ok) { setEditPassId(null); setNewPass(""); setShowNewPass(false); }
-    }}
-    className="text-green-400 hover:text-green-300 transition-colors p-1 rounded hover:bg-green-500/10"
-    title="Simpan"
-  >✓</button>
-  <button
-    onClick={() => { setEditPassId(null); setNewPass(""); setShowNewPass(false); }}
-    className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded hover:bg-slate-700"
-    title="Batal"
-  >✕</button>
-</div>
+                              <div className="relative">
+                                <input
+                                  type={showNewPass ? "text" : "password"}
+                                  placeholder="Min. 8 karakter"
+                                  value={newPass}
+                                  onChange={(e) => setNewPass(e.target.value)}
+                                  autoFocus
+                                  className="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 pr-7 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-slate-400 w-40 transition"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowNewPass((v) => !v)}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                                  title={showNewPass ? "Sembunyikan" : "Tampilkan"}
+                                >
+                                  {showNewPass ? <EyeOffIcon /> : <EyeIcon />}
+                                </button>
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  const res = await updateUserPassword(user.id, newPass);
+                                  setToast(res);
+                                  if (res.ok) { setEditPassId(null); setNewPass(""); setShowNewPass(false); }
+                                }}
+                                className="text-green-400 hover:text-green-300 transition-colors p-1 rounded hover:bg-green-500/10"
+                                title="Simpan"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                onClick={() => { setEditPassId(null); setNewPass(""); setShowNewPass(false); }}
+                                className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded hover:bg-slate-700"
+                                title="Batal"
+                              >
+                                ✕
+                              </button>
+                            </div>
                           ) : (
                             <button
                               onClick={() => { setEditPassId(user.id); setNewPass(""); }}
@@ -482,7 +535,7 @@ export default function UsersPage() {
                           )
                         )}
 
-                        {/* Hapus / label Anda */}
+                        {/* Tombol Hapus (Tidak bisa hapus diri sendiri) */}
                         {user.id === currentUserId ? (
                           <span className="text-xs text-slate-700 px-2 py-1">Anda</span>
                         ) : (
@@ -504,11 +557,13 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {/* Render Modal Tambah & Hapus */}
       <TambahUserModal
         open={showModal}
         onClose={() => setShowModal(false)}
         onSuccess={(msg) => { setToast({ ok: true, message: msg }); loadUsers(); }}
       />
+      
       <DeleteConfirmModal
         user={deleteTarget}
         onClose={() => setDeleteTarget(null)}

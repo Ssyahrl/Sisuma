@@ -6,7 +6,10 @@ import { supabase } from "@/lib/supabase";
 import Sidebar from "../../components/layout/Sidebar";
 import Header from "../../components/layout/Header";
 
-const roleHomeMap = {
+// ==========================================
+// KONSTANTA PEMETAAN HALAMAN (ROLE)
+// ==========================================
+const ROLE_HOME_MAP = {
   admin: "/dashboard",
   fakultas: "/dashboard/fakultas",
   sekretaris: "/dashboard/sekretaris",
@@ -15,25 +18,29 @@ const roleHomeMap = {
 };
 
 export default function DashboardLayout({ children }) {
+  // ==========================================
+  // 1. HOOKS
+  // ==========================================
   const router = useRouter();
   const pathname = usePathname();
 
+  // ==========================================
+  // 2. AUTH & ROLE CHECK (Client Side Guard)
+  // ==========================================
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
-        // cek session
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        // Cek Session Aktif
+        const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
           router.replace("/login");
           return;
         }
 
-        // cek role user
+        // Cek Role User dari Database Profile
         const { data: profile, error } = await supabase
           .from("profiles")
           .select("role")
@@ -41,57 +48,62 @@ export default function DashboardLayout({ children }) {
           .single();
 
         if (error) {
-          console.error(error);
+          // console.error(error);
           router.replace("/unauthorized");
           return;
         }
 
         if (!mounted) return;
 
+        // Validasi Akses Berdasarkan Role
         if (profile?.role) {
           const role = profile.role.toLowerCase().trim();
 
-          const resolvedRole = Object.keys(roleHomeMap).find(
-            (key) =>
-              key === role ||
-              (key === "fakultas" && role.includes("fakultas"))
+          const resolvedRole = Object.keys(ROLE_HOME_MAP).find(
+            (key) => key === role || (key === "fakultas" && role.includes("fakultas"))
           );
 
-          const home = roleHomeMap[resolvedRole] || "/unauthorized";
+          const home = ROLE_HOME_MAP[resolvedRole] || "/unauthorized";
 
-          // cegah user masuk area role lain
+          // Cegah user masuk ke area role lain
           if (!pathname.startsWith(home)) {
             router.replace(home);
             return;
           }
         }
       } catch (err) {
-        console.error("Auth Init Error:", err);
+        // console.error("Auth Init Error:", err);
         router.replace("/login");
       }
     };
 
     initializeAuth();
 
-    // listener auth change
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    // Listener perubahan status Auth (misal: user logout di tab lain)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || !session) {
         router.replace("/login");
       }
     });
 
+    // Cleanup function untuk mencegah memory leak
     return () => {
       mounted = false;
       subscription?.unsubscribe();
     };
-  }, []); // <- penting, jangan pakai pathname
+    
+    // PENTING: pathname sengaja tidak dimasukkan agar tidak terjadi infinite loop DB call
+  }, [router]); 
 
+  // ==========================================
+  // 3. RENDER UI LAYOUT
+  // ==========================================
   return (
     <div className="flex h-screen overflow-hidden bg-[#F5F7FB]">
+      {/* Sidebar Navigasi Kiri */}
       <Sidebar />
 
+      {/* Konten Utama Kanan */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
 

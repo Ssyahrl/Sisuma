@@ -1,9 +1,13 @@
 'use client';
+
 import { processApproval } from "@/app/dashboard/actions/approval";
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { CheckCircle, XCircle, Clock, FileText, ChevronRight, X, Eye } from 'lucide-react';
 
+// ==========================================
+// KONSTANTA & PENGATURAN TAMPILAN
+// ==========================================
 const STATUS_LABEL = {
   pending_sekretaris: { label: 'Menunggu Review',              color: '#c9993a', bg: '#fdf6e7' },
   pending_wakil:      { label: 'Diteruskan ke Wakil Rektor',   color: '#1a2744', bg: '#e8ecf4' },
@@ -13,31 +17,62 @@ const STATUS_LABEL = {
   draft:              { label: 'Draft',                        color: '#6b7280', bg: '#f3f4f6' },
 };
 
+const FILTERS = [
+  { key: 'pending_sekretaris', label: 'Perlu Review'  },
+  { key: 'pending_wakil',      label: 'Diteruskan'    },
+  { key: 'rejected',           label: 'Ditolak'       },
+  { key: 'approved',           label: 'Selesai'       },
+];
+
+// ==========================================
+// KOMPONEN 1: BADGE STATUS
+// ==========================================
 function Badge({ status }) {
   const s = STATUS_LABEL[status] || STATUS_LABEL.draft;
+  
   return (
-    <span style={{
-      background: s.bg, color: s.color,
-      fontSize: 12, fontWeight: 600, padding: '3px 10px',
-      borderRadius: 20, letterSpacing: 0.2,
-      border: `1px solid ${s.color}33`,
-    }}>
+    <span
+      style={{
+        background: s.bg,
+        color: s.color,
+        fontSize: 12,
+        fontWeight: 600,
+        padding: '3px 10px',
+        borderRadius: 20,
+        letterSpacing: 0.2,
+        border: `1px solid ${s.color}33`,
+      }}
+    >
       {s.label}
     </span>
   );
 }
 
+// ==========================================
+// KOMPONEN 2: CATATAN BOX
+// ==========================================
 function CatatanBox({ label, value, color = '#1d4ed8', bg = '#eff6ff', border = '#bfdbfe' }) {
   if (!value) return null;
+  
   return (
-    <div style={{
-      background: bg, border: `1px solid ${border}`,
-      borderRadius: 8, padding: '10px 14px',
-    }}>
-      <p style={{
-        margin: '0 0 4px', fontSize: 11, fontWeight: 700,
-        color, textTransform: 'uppercase', letterSpacing: 0.5,
-      }}>
+    <div
+      style={{
+        background: bg,
+        border: `1px solid ${border}`,
+        borderRadius: 8,
+        padding: '10px 14px',
+      }}
+    >
+      <p
+        style={{
+          margin: '0 0 4px',
+          fontSize: 11,
+          fontWeight: 700,
+          color,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }}
+      >
         {label}
       </p>
       <p style={{ margin: 0, fontSize: 13, color: '#1e3a5f', fontStyle: 'italic', lineHeight: 1.6 }}>
@@ -47,6 +82,9 @@ function CatatanBox({ label, value, color = '#1d4ed8', bg = '#eff6ff', border = 
   );
 }
 
+// ==========================================
+// KOMPONEN 3: MODAL DETAIL SURAT
+// ==========================================
 function Modal({ surat, onClose, onAction }) {
   const [catatan, setCatatan] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,17 +112,21 @@ function Modal({ surat, onClose, onAction }) {
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div style={{
-        background: '#fff', borderRadius: 16,
-        width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '1.25rem 1.5rem', borderBottom: '1px solid #e5e7eb',
-          position: 'sticky', top: 0, background: '#fff', zIndex: 1,
-        }}>
+      <div
+        style={{
+          background: '#fff', borderRadius: 16,
+          width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        }}
+      >
+        {/* Header Modal */}
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '1.25rem 1.5rem', borderBottom: '1px solid #e5e7eb',
+            position: 'sticky', top: 0, background: '#fff', zIndex: 1,
+          }}
+        >
           <div>
             <p style={{ margin: 0, fontSize: 12, color: '#6b7280', fontWeight: 500, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Detail Surat
@@ -93,16 +135,19 @@ function Modal({ surat, onClose, onAction }) {
               {surat.templates?.nama_template || 'Surat'}
             </h2>
           </div>
-          <button onClick={onClose} style={{
-            background: '#f3f4f6', border: 'none', borderRadius: 8,
-            width: 32, height: 32, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', cursor: 'pointer', color: '#374151',
-          }}>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#f3f4f6', border: 'none', borderRadius: 8,
+              width: 32, height: 32, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', cursor: 'pointer', color: '#374151',
+            }}
+          >
             <X size={16} />
           </button>
         </div>
 
-        {/* Meta info */}
+        {/* Informasi Meta */}
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
@@ -113,14 +158,18 @@ function Modal({ surat, onClose, onAction }) {
               ['Tujuan',      surat.tujuan || 'NULL'],
             ].map(([label, val]) => (
               <div key={label} style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px' }}>
-                <p style={{ margin: '0 0 4px', fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</p>
-                <div style={{ fontSize: 14, color: '#1a2744', fontWeight: 500 }}>{val}</div>
+                <p style={{ margin: '0 0 4px', fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                  {label}
+                </p>
+                <div style={{ fontSize: 14, color: '#1a2744', fontWeight: 500 }}>
+                  {val}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ✅ Catatan dari Fakultas & Admin */}
+        {/* Catatan dari Fakultas & Admin */}
         {(surat.catatan_fakultas || surat.catatan_admin) && (
           <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <p style={{ margin: '0 0 4px', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -167,7 +216,7 @@ function Modal({ surat, onClose, onAction }) {
           )}
         </div>
 
-        {/* Catatan sekretaris */}
+        {/* Input Catatan Sekretaris */}
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6' }}>
           <label style={{ display: 'block', fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
             Catatan Sekretaris (opsional)
@@ -186,7 +235,7 @@ function Modal({ surat, onClose, onAction }) {
           />
         </div>
 
-        {/* Action buttons */}
+        {/* Tombol Aksi */}
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button
             onClick={() => handleClick('reject')}
@@ -200,6 +249,7 @@ function Modal({ surat, onClose, onAction }) {
           >
             <XCircle size={15} /> Tolak
           </button>
+          
           <button
             onClick={() => handleClick('approve')}
             disabled={loading}
@@ -218,13 +268,18 @@ function Modal({ surat, onClose, onAction }) {
   );
 }
 
+// ==========================================
+// KOMPONEN 4: DASHBOARD UTAMA SEKRETARIS
+// ==========================================
 export default function DashboardSekretarisRektor() {
+  // 1. STATE & HOOKS
   const [suratList, setSuratList] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [selected, setSelected]   = useState(null);
   const [filter, setFilter]       = useState('pending_sekretaris');
   const [stats, setStats]         = useState({ pending: 0, approved: 0, rejected: 0 });
 
+  // 2. DATA FETCHING (List Surat)
   useEffect(() => {
     async function fetchSurat() {
       setLoading(true);
@@ -236,7 +291,6 @@ export default function DashboardSekretarisRektor() {
             profiles:user_id (email, nama),
             templates:template_id (nama_template)
           `)
-          // ✅ catatan_fakultas & catatan_admin sudah ikut lewat wildcard *
           .eq('status', filter)
           .order('created_at', { ascending: false });
 
@@ -248,6 +302,7 @@ export default function DashboardSekretarisRektor() {
     fetchSurat();
   }, [filter]);
 
+  // DATA FETCHING (Statistik)
   useEffect(() => {
     async function fetchStats() {
       const statuses = ['pending_sekretaris', 'approved', 'rejected'];
@@ -263,31 +318,27 @@ export default function DashboardSekretarisRektor() {
     fetchStats();
   }, []);
 
+  // 3. HANDLERS
   async function handleAction(suratId, action, catatan) {
     try {
       await processApproval(suratId, "SEKRETARIS", action, catatan);
-      setSuratList(prev => prev.filter(s => s.id !== suratId));
+      setSuratList((prev) => prev.filter((s) => s.id !== suratId));
     } catch (err) {
       alert("Gagal: " + err.message);
     }
   }
 
+  // 4. COMPUTED VALUES (Stat Cards)
   const STAT_CARDS = [
     { label: 'Menunggu Review', value: stats.pending,  icon: <Clock size={18} />,       color: '#c9993a', bg: '#fdf6e7' },
     { label: 'Disetujui',       value: stats.approved, icon: <CheckCircle size={18} />, color: '#15803d', bg: '#f0fdf4' },
     { label: 'Ditolak',         value: stats.rejected, icon: <XCircle size={18} />,     color: '#dc2626', bg: '#fef2f2' },
   ];
 
-  const FILTERS = [
-    { key: 'pending_sekretaris', label: 'Perlu Review'  },
-    { key: 'pending_wakil',      label: 'Diteruskan'    },
-    { key: 'rejected',           label: 'Ditolak'       },
-    { key: 'approved',           label: 'Selesai'       },
-  ];
-
+  // 5. RENDER UI
   return (
     <div style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: 'system-ui, sans-serif' }}>
-      {/* Header */}
+      {/* Header Dashboard */}
       <div style={{ background: '#1a2744', padding: '1.5rem 2rem' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <p style={{ margin: 0, color: '#c9993a', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -300,26 +351,33 @@ export default function DashboardSekretarisRektor() {
       </div>
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 2rem' }}>
-        {/* Stat cards */}
+        {/* Statistik Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: '1.5rem' }}>
           {STAT_CARDS.map(({ label, value, icon, color, bg }) => (
-            <div key={label} style={{
-              background: '#fff', borderRadius: 12,
-              border: '1px solid #e5e7eb', padding: '1rem 1.25rem',
-              display: 'flex', alignItems: 'center', gap: 14,
-            }}>
+            <div
+              key={label}
+              style={{
+                background: '#fff', borderRadius: 12,
+                border: '1px solid #e5e7eb', padding: '1rem 1.25rem',
+                display: 'flex', alignItems: 'center', gap: 14,
+              }}
+            >
               <div style={{ background: bg, color, borderRadius: 10, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {icon}
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</p>
-                <p style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 700, color: '#1a2744', lineHeight: 1 }}>{value}</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                  {label}
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 700, color: '#1a2744', lineHeight: 1 }}>
+                  {value}
+                </p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Filter tabs */}
+        {/* Tab Navigasi Filter */}
         <div style={{ display: 'flex', gap: 6, marginBottom: '1rem' }}>
           {FILTERS.map(({ key, label }) => (
             <button
@@ -338,29 +396,36 @@ export default function DashboardSekretarisRektor() {
           ))}
         </div>
 
-        {/* Surat list */}
+        {/* Daftar Surat (Tabel) */}
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
           {loading ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
-              <Clock size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
+              <Clock size={32} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
               <p style={{ margin: 0 }}>Memuat data...</p>
             </div>
           ) : suratList.length === 0 ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
-              <FileText size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
+              <FileText size={32} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
               <p style={{ margin: 0, fontWeight: 600 }}>Tidak ada surat</p>
-              <p style={{ margin: '4px 0 0', fontSize: 13 }}>Semua surat sudah diproses atau belum ada yang masuk.</p>
+              <p style={{ margin: '4px 0 0', fontSize: 13 }}>
+                Semua surat sudah diproses atau belum ada yang masuk.
+              </p>
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #f3f4f6', background: '#f8fafc' }}>
-                  {['Jenis Surat', 'Pembuat', 'Tanggal', 'Status', ''].map(h => (
-                    <th key={h} style={{
-                      textAlign: 'left', padding: '11px 16px',
-                      fontSize: 11, color: '#9ca3af', fontWeight: 700,
-                      textTransform: 'uppercase', letterSpacing: 0.5,
-                    }}>{h}</th>
+                  {['Jenis Surat', 'Pembuat', 'Tanggal', 'Status', ''].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        textAlign: 'left', padding: '11px 16px',
+                        fontSize: 11, color: '#9ca3af', fontWeight: 700,
+                        textTransform: 'uppercase', letterSpacing: 0.5,
+                      }}
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -372,10 +437,11 @@ export default function DashboardSekretarisRektor() {
                       borderBottom: i < suratList.length - 1 ? '1px solid #f3f4f6' : 'none',
                       cursor: 'pointer', transition: 'background 0.1s',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     onClick={() => setSelected(s)}
                   >
+                    {/* Kolom Jenis Surat */}
                     <td style={{ padding: '13px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ background: '#e8ecf4', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -391,15 +457,23 @@ export default function DashboardSekretarisRektor() {
                         </div>
                       </div>
                     </td>
+
+                    {/* Kolom Pembuat */}
                     <td style={{ padding: '13px 16px', fontSize: 13, color: '#6b7280' }}>
                       {s.profiles?.nama || s.profiles?.email || '-'}
                     </td>
+
+                    {/* Kolom Tanggal */}
                     <td style={{ padding: '13px 16px', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>
                       {new Date(s.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
+
+                    {/* Kolom Status */}
                     <td style={{ padding: '13px 16px' }}>
                       <Badge status={s.status} />
                     </td>
+
+                    {/* Ikon Arrow */}
                     <td style={{ padding: '13px 16px', textAlign: 'right' }}>
                       <ChevronRight size={16} color="#9ca3af" />
                     </td>
@@ -411,6 +485,7 @@ export default function DashboardSekretarisRektor() {
         </div>
       </div>
 
+      {/* Render Modal jika ada surat yang diklik */}
       <Modal surat={selected} onClose={() => setSelected(null)} onAction={handleAction} />
     </div>
   );

@@ -19,7 +19,6 @@ export const statusConfig = {
 
 export const roleLabel = {
   fakultas:   "Fakultas",
-  admin:      "Admin / TU",
   sekretaris: "Sekretaris",
   warek:      "Wakil Rektor",
   rektor:     "Rektor",

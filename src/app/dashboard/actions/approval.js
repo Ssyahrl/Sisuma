@@ -39,7 +39,7 @@ export async function processApproval(suratId, role, action, catatan = "") {
   // 1. Ambil data surat beserta template-nya
   const { data: surat, error: suratErr } = await supabaseAdmin
     .from("surat")
-    .select("id, status, tujuan, nomor_surat, template_id, user_id, templates(approval_flow, nama_template, jenis_surat)")
+    .select("id, status, tujuan, nomor_surat, template_id, user_id, templates!template_id(approval_flow, nama_template, jenis_surat)")
     .eq("id", suratId)
     .single();
 

@@ -58,12 +58,16 @@ function Modal({ surat, onClose, onAction }) {
   const approveLabel = isLastStep ? 'Setujui' : 'Teruskan ke Rektor';
   const ApproveIcon  = isLastStep ? CheckCircle : ChevronRight;
 
-  const handleAction = async (action) => {
-    setLoading(true);
-    await onAction(surat.id, action, catatan);
-    setLoading(false);
-    onClose();
-  };
+const handleAction = async (action) => {
+  if (action === 'reject' && !catatan.trim()) {
+    alert("Wajib mengisi catatan alasan penolakan.");
+    return;
+  }
+  setLoading(true);
+  await onAction(surat.id, action, catatan);
+  setLoading(false);
+  onClose();
+};
 
   return (
     <div

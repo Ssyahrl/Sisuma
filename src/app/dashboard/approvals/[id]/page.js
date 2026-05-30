@@ -170,8 +170,8 @@ export default function ApprovalDetailPage() {
   // AKSI: TOLAK SURAT
   // ==========================================
   const handleTolak = async () => {
-    if (!canAct) return;
-    if (!catatan.trim()) return alert("Wajib memberikan alasan penolakan.");
+    if (!catatan.trim())
+       return alert("Wajib memberikan alasan penolakan.");
     
     setSubmitting(true);
     const now = new Date().toISOString();

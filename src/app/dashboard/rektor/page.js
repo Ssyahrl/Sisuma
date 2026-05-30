@@ -53,11 +53,15 @@ function Modal({ surat, onClose, onAction }) {
   if (!surat) return null;
 
   const handleAction = async (action) => {
-    setLoading(true);
-    await onAction(surat.id, action, catatan);
-    setLoading(false);
-    onClose();
-  };
+  if (action === 'reject' && !catatan.trim()) {
+    alert("Wajib mengisi catatan alasan penolakan.");
+    return;
+  }
+  setLoading(true);
+  await onAction(surat.id, action, catatan);
+  setLoading(false);
+  onClose();
+};
 
   return (
     <div

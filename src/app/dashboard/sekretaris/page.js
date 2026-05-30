@@ -96,11 +96,15 @@ function Modal({ surat, onClose, onAction }) {
   const ApproveIcon  = isLastStep ? CheckCircle : ChevronRight;
 
   async function handleClick(action) {
-    setLoading(true);
-    await onAction(surat.id, action, catatan);
-    setLoading(false);
-    onClose();
+  if (action === 'reject' && !catatan.trim()) {
+    alert("Wajib mengisi catatan alasan penolakan.");
+    return;
   }
+  setLoading(true);
+  await onAction(surat.id, action, catatan);
+  setLoading(false);
+  onClose();
+}
 
   return (
     <div
@@ -284,6 +288,13 @@ export default function DashboardSekretarisRektor() {
     async function fetchSurat() {
       setLoading(true);
       try {
+        // Cek session dulu sebelum fetch
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = "/";
+          return;
+        }
+
         const { data, error } = await supabase
           .from('surat')
           .select(`
@@ -294,14 +305,20 @@ export default function DashboardSekretarisRektor() {
           .eq('status', filter)
           .order('created_at', { ascending: false });
 
-        if (!error) setSuratList(data || []);
+        if (error) {
+          console.error("Fetch error:", error.message);
+          return;
+        }
+
+        setSuratList(data || []);
+      } catch (err) {
+        console.error("Unexpected error:", err.message);
       } finally {
         setLoading(false);
       }
     }
     fetchSurat();
   }, [filter]);
-
   // DATA FETCHING (Statistik)
   useEffect(() => {
     async function fetchStats() {

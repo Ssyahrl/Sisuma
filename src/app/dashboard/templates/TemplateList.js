@@ -82,7 +82,19 @@ export default function TemplateList({ onSelect }) {
   };
 
   const handleSaveEdit = async () => {
-    if (!editData) return;
+  if (!editData) return;
+
+  if (editData.approval_flow.length === 0) {
+    alert("Alur persetujuan tidak boleh kosong.");
+    return;
+  }
+  if (
+    editData.approval_flow.length === 1 &&
+    editData.approval_flow[0] === "ADMIN"
+  ) {
+    alert("Admin tidak bisa menjadi satu-satunya approver. Tambahkan minimal Sekretaris atau role lainnya.");
+    return;
+  }
     
     await fetch(`/api/templates/${editData.id}`, {
       method: "PUT",

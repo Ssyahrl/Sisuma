@@ -380,26 +380,7 @@ function BuatSuratFakultasInner() {
               >
                 {saving ? "Menyimpan..." : "Simpan"}
               </button>
-              <button
-                onClick={handleGenerate}
-                disabled={loading}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  padding: "7px 18px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: "#0B2A4A",
-                  fontSize: 12,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  color: "#fff",
-                  opacity: loading ? 0.6 : 1,
-                }}
-              >
-                <Download size={14} />
-                {loading ? "Membuat..." : "Generate DOCX"}
-              </button>
+              
             </div>
           </div>
 

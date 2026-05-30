@@ -175,13 +175,6 @@ export default function TemplateEditor({ template }) {
             >
               Ajukan sebagai Admin
             </button>
-
-            <button
-              onClick={handleGenerate}
-              className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition"
-            >
-              Simpan DOCX
-            </button>
           </div>
         </div>
 

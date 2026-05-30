@@ -125,7 +125,7 @@ export default function TemplateList({ onSelect }) {
               <div className="flex justify-between items-start">
                 
                 {/* Informasi Template (Klik untuk pilih) */}
-                <div onClick={() => onSelect && onSelect(template)} className="cursor-pointer flex-1">
+                <div onClick={() => onSelect && onSelect(template)} className="cursor-pointer flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <div className="font-semibold text-gray-800 text-[15px]">
                       {stripExt(template.nama_template)}
@@ -146,7 +146,7 @@ export default function TemplateList({ onSelect }) {
                 </div>
 
                 {/* Tombol Aksi (Edit & Hapus) */}
-                <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleEdit(template)}
                     className="p-2.5 hover:bg-blue-50 rounded-xl text-blue-600 transition"

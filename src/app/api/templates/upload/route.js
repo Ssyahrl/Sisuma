@@ -49,7 +49,22 @@ export async function POST(req) {
       );
     }
 
-    // 4. Baru upload file .docx ke Supabase Storage
+    // 4. Cek duplikat nama template di DB
+    const namaTemplate = file.name.replace(/\.[^/.]+$/, "");
+    const { data: existing } = await supabase
+      .from("templates")
+      .select("id")
+      .eq("nama_template", namaTemplate)
+      .maybeSingle();
+
+    if (existing) {
+      return Response.json(
+        { error: `Template "${namaTemplate}" sudah ada. Hapus atau ganti nama file terlebih dahulu.` },
+        { status: 400 }
+      );
+    }
+
+    // 5. Baru upload file .docx ke Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from("templates")
       .upload(fileName, buffer, {
@@ -61,11 +76,10 @@ export async function POST(req) {
       .from("templates")
       .getPublicUrl(fileName);
 
-    // 5. Konversi .docx ke HTML untuk preview
+    // 6. Konversi .docx ke HTML untuk preview
     const { value: html_template } = await mammoth.convertToHtml({ buffer });
 
-    // 6. Simpan ke DB
-    const namaTemplate = file.name.replace(/\.[^/.]+$/, "");
+    // 7. Simpan ke DB
     const { error: dbError } = await supabase.from("templates").insert([{
       nama_template: namaTemplate,
       file_url: publicUrl,

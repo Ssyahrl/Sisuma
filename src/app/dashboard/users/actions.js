@@ -154,7 +154,7 @@ if (!/[A-Z]/.test(newPassword)) {
 if (!/[0-9]/.test(newPassword)) {
   return { ok: false, message: "Password harus mengandung minimal 1 angka." };
 }
-if (/[\s'";\-\-\/\*\\]/.test(newPassword)) {
+if (!/^[A-Za-z0-9@#$%^&*!+=\-_.]+$/.test(newPassword)) {
   return { ok: false, message: "Password mengandung karakter yang tidak diizinkan." };
 }
 

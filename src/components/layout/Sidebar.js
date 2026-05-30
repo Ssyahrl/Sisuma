@@ -188,7 +188,7 @@ export default function Sidebar() {
           onClick={handleLogout}
         />
         {!isCollapsed && (
-          <p className="text-white/20 text-xs text-center mt-3">V 1.2.0</p>
+          <p className="text-white/20 text-xs text-center mt-3">V 1.2.2</p>
         )}
       </div>
     </div>

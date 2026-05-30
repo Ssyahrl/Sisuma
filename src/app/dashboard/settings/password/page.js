@@ -25,12 +25,21 @@ export default function PasswordSettingsPage() {
     e.preventDefault();
     
     // Validasi input lokal
-    if (newPass.length < 8) {
-      return showToast(false, "Password baru minimal 8 karakter.");
-    }
-    if (newPass !== confirm) {
-      return showToast(false, "Konfirmasi password tidak cocok.");
-    }
+if (newPass.length < 8 || newPass.length > 12) {
+  return showToast(false, "Password harus 8-12 karakter.");
+}
+if (!/[A-Z]/.test(newPass)) {
+  return showToast(false, "Password harus mengandung minimal 1 huruf kapital.");
+}
+if (!/[0-9]/.test(newPass)) {
+  return showToast(false, "Password harus mengandung minimal 1 angka.");
+}
+if (!/^[A-Za-z0-9@#$%^&*!+=\-_.]+$/.test(newPass)) {
+  return showToast(false, "Password mengandung karakter yang tidak diizinkan.");
+}
+if (newPass !== confirm) {
+  return showToast(false, "Konfirmasi password tidak cocok.");
+}
 
     setIsPending(true);
     try {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 const ROLE_ALLOWED_PATHS = {
-  admin:      ['/dashboard'],
+  admin:      ['/dashboard', '/dashboard/templates', '/dashboard/users', '/dashboard/settings'],
   fakultas:   ['/dashboard/fakultas', '/dashboard/settings/password'],
   sekretaris: ['/dashboard/sekretaris', '/dashboard/settings/password'],
   warek:      ['/dashboard/wakil-rektor', '/dashboard/settings/password'],
@@ -14,8 +14,8 @@ export async function middleware(req) {
   const pathname = req.nextUrl.pathname
 
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
-  return NextResponse.next()  // harusnya langsung next tanpa cek cookie
-}
+    return NextResponse.next()
+  }
 
   const role = req.cookies.get('user_role')?.value
 

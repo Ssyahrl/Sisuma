@@ -1,3 +1,4 @@
+// src/middleware.js
 import { NextResponse } from 'next/server'
 
 const ROLE_ALLOWED_PATHS = {
@@ -10,36 +11,24 @@ const ROLE_ALLOWED_PATHS = {
 
 const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon']
 
-export async function proxy(req) {
+export async function middleware(req) {
   const pathname = req.nextUrl.pathname
-
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p)) || pathname === '/') {
     return NextResponse.next()
   }
-
   const role = req.cookies.get('user_role')?.value
-
-  if (!role) {
-    return NextResponse.redirect(new URL('/login', req.url))
-  }
-
+  if (!role) return NextResponse.redirect(new URL('/login', req.url))
   const resolvedRole = Object.keys(ROLE_ALLOWED_PATHS).find(key =>
     key === role || (key === 'fakultas' && role.includes('fakultas'))
   )
-
-  if (!resolvedRole) {
-    return NextResponse.redirect(new URL('/unauthorized', req.url))
-  }
-
+  if (!resolvedRole) return NextResponse.redirect(new URL('/unauthorized', req.url))
   const allowedPaths = ROLE_ALLOWED_PATHS[resolvedRole]
   const isAllowed = allowedPaths.some(p => pathname.startsWith(p))
-
-  if (!isAllowed) {
-    return NextResponse.redirect(new URL('/unauthorized', req.url))
-  }
-
+  if (!isAllowed) return NextResponse.redirect(new URL('/unauthorized', req.url))
   return NextResponse.next()
 }
+
+export const runtime = 'nodejs'
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],

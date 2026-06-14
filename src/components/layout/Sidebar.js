@@ -65,20 +65,22 @@ const NAV_CONFIG = {
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [role, setRole] = useState(null);
-  const router = useRouter();
   const [namaUser, setNamaUser] = useState("");
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const getRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) { setLoading(false); return; }
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role, nama") 
+        .select("role, nama")
         .eq("id", session.user.id)
         .single();
       if (profile?.role) setRole(profile.role.toLowerCase().trim());
-      if (profile?.nama) setNamaUser(profile.nama); 
+      if (profile?.nama) setNamaUser(profile.nama);
+      setLoading(false);
     };
     getRole();
   }, []);
@@ -86,34 +88,20 @@ export default function Sidebar() {
   const handleLogout = async () => {
     if (!confirm("Apakah Anda yakin ingin keluar?")) return;
     try {
+      document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax';
       await supabase.auth.signOut({ scope: "global" });
       window.location.href = "/login";
     } catch {
+      document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax';
       window.location.href = "/login";
     }
   };
-  const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  const getRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, nama")
-      .eq("id", session.user.id)
-      .single();
-    if (profile?.role) setRole(profile.role.toLowerCase().trim());
-    if (profile?.nama) setNamaUser(profile.nama);
-    setLoading(false); // ← tambah ini
-  };
-  getRole();
-}, []);
-if (loading) return (
-  <div className="h-screen w-64 bg-[#0B2A4A] flex items-center justify-center">
-    <div className="text-white/30 text-xs">Loading...</div>
-  </div>
-);
+  if (loading) return (
+    <div className="h-screen w-64 bg-[#0B2A4A] flex items-center justify-center">
+      <div className="text-white/30 text-xs">Loading...</div>
+    </div>
+  );
 
   // Resolve config — fakultas bisa "fakultas_teknik" dll, jadi pakai includes
   const resolvedRole = role

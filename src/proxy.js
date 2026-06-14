@@ -8,12 +8,12 @@ const ROLE_ALLOWED_PATHS = {
   rektor:     ['/dashboard/rektor', '/dashboard/settings/password'],
 }
 
-const PUBLIC_PATHS = ['/login', '/unauthorized']
+const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon']
 
-export async function middleware(req) {
+export async function proxy(req) {
   const pathname = req.nextUrl.pathname
 
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p)) || pathname === '/') {
     return NextResponse.next()
   }
 

@@ -12,61 +12,49 @@ function FakultasCard({ f, nextNumber = "001" }) {
   const displayName = f.slug.replace(/_/g, " ");
   const prefix      = f.prefix || f.slug;
 
-  const contoh = DEFAULT_FORMAT
+  const makeContoh = (jenis) => DEFAULT_FORMAT
     .replace("{NOMOR_URUT:3}", nextNumber)
-    .replace("{JENIS}",        "SK")
+    .replace("{JENIS}",        jenis)
     .replace("{PREFIX}",       prefix)
     .replace("{BULAN_ROMAWI}", "V")
     .replace("{TAHUN}",        new Date().getFullYear().toString());
 
   return (
-    <div
-      style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 16px", background: "#fff",
-        border: "0.5px solid #d1fae5", borderRadius: 10, marginBottom: 8,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {/* Ikon Gedung */}
-        <div
-          style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: "#d1fae5", border: "1px solid #6ee7b7",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-          }}
-        >
+    <div style={{
+      padding: "12px 16px", background: "#fff",
+      border: "0.5px solid #d1fae5", borderRadius: 10, marginBottom: 8,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: 8,
+          background: "#d1fae5", border: "1px solid #6ee7b7",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+        }}>
           🏛
         </div>
-        
-        {/* Info Fakultas */}
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: "#065f46", textTransform: "capitalize" }}>
             {displayName}
           </div>
           <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
-            Prefix:{" "}
-            <span style={{ fontFamily: "monospace", color: "#10b981", fontWeight: 600 }}>
-              {prefix}
-            </span>
+            Prefix: <span style={{ fontFamily: "monospace", color: "#10b981", fontWeight: 600 }}>{prefix}</span>
           </div>
         </div>
       </div>
-      
-      {/* Preview Nomor Urut */}
-      <div style={{ textAlign: "right" }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#64748b" }}>
-          {DEFAULT_FORMAT}
-        </div>
-        <div
-          style={{
-            fontFamily: "monospace", fontSize: 13, fontWeight: 700,
-            color: nextNumber === "001" ? "#059669" : "#065f46",
-            marginTop: 2, transition: "color .3s",
-          }}
-        >
-          No berikut nya : {contoh}
-        </div>
+
+      {/* Preview per jenis surat */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {["SK", "KT"].map((jenis) => (
+          <div key={jenis} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "6px 10px", background: "#f0fdf4", borderRadius: 7,
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#10b981" }}>{jenis}</span>
+            <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#065f46" }}>
+              {makeContoh(jenis)}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

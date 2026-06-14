@@ -92,6 +92,28 @@ export default function Sidebar() {
       window.location.href = "/login";
     }
   };
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const getRole = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, nama")
+      .eq("id", session.user.id)
+      .single();
+    if (profile?.role) setRole(profile.role.toLowerCase().trim());
+    if (profile?.nama) setNamaUser(profile.nama);
+    setLoading(false); // ← tambah ini
+  };
+  getRole();
+}, []);
+if (loading) return (
+  <div className="h-screen w-64 bg-[#0B2A4A] flex items-center justify-center">
+    <div className="text-white/30 text-xs">Loading...</div>
+  </div>
+);
 
   // Resolve config — fakultas bisa "fakultas_teknik" dll, jadi pakai includes
   const resolvedRole = role
@@ -172,6 +194,8 @@ export default function Sidebar() {
           />
         ))}
       </div>
+
+      
 
       {/* Footer */}
       <div className="p-4 border-t border-white/10 shrink-0 space-y-1">

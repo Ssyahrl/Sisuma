@@ -304,7 +304,7 @@ export default function ApprovalDetailPage() {
                 <button
                   onClick={handleTeruskan}
                   disabled={submitting}
-                  className="flex-[2] py-3 px-4 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+                  className="flex-2 py-3 px-4 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
                 >
                   <CheckCircle size={18} /> {submitting ? "Memproses..." : "Setujui & Teruskan"}
                 </button>

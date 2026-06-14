@@ -213,15 +213,17 @@ async function generateNomor(suratId, surat) {
     : [];
 
   // Panggil fungsi RPC dari Supabase untuk mendapatkan nomor urut selanjutnya
-  const { data: nextNumber, error: counterErr } = isFakultas
-    ? await supabaseAdmin.rpc("get_next_nomor_fakultas", {
-        p_user_id: userId,
-        p_tahun:   tahun,
-      })
-    : await supabaseAdmin.rpc("get_next_nomor_global", {
-        p_tahun: tahun,
-      });
-
+const { data: nextNumber, error: counterErr } = isFakultas
+  ? await supabaseAdmin.rpc("get_next_nomor_fakultas", {
+      p_user_id:     userId,
+      p_tahun:       tahun,
+      p_jenis_surat: surat.templates?.jenis_surat || "SK",
+    })
+  : await supabaseAdmin.rpc("get_next_nomor_global", {
+      p_tahun:       tahun,
+      p_jenis_surat: surat.templates?.jenis_surat || "SK",
+    });
+    
   if (counterErr) throw new Error("Gagal generate nomor: " + counterErr.message);
 
   // Persiapkan variabel untuk mengganti token pada format string

@@ -154,12 +154,12 @@ export default function GlobalSettings({ initialFormat, onSaveSuccess }) {
   const [saving, setSaving]                 = useState(false);
   const [savedFormat, setSavedFormat]       = useState(initialFormat || DEFAULT_INIT);
   const [error, setError]                   = useState("");
-  const [currentNumber, setCurrentNumber]   = useState("...");
+  const [currentNumbers, setCurrentNumbers] = useState({});
 
   // DATA FETCHING
-  useEffect(() => {
-    loadAdminCounter().then((n) => setCurrentNumber(n));
-  }, []);
+useEffect(() => {
+  loadAdminCounter().then((n) => setCurrentNumbers(n));
+}, []);
 
   // Sync kalau parent reload data
   useEffect(() => {
@@ -245,15 +245,15 @@ export default function GlobalSettings({ initialFormat, onSaveSuccess }) {
     setSaving(false);
   };
 
-  const handleReset = async () => {
-    if (!confirm("Reset nomor urut Admin ke 001? Format tidak akan berubah.")) return;
-    try {
-      await resetAdminCounter();
-      setCurrentNumber("001"); // realtime update
-    } catch (e) {
-      alert("Gagal reset: " + e.message);
-    }
-  };
+const handleReset = async () => {
+  if (!confirm("Reset nomor urut Admin ke 001? Format tidak akan berubah.")) return;
+  try {
+    await resetAdminCounter();
+    setCurrentNumbers({ SK: "001", KT: "001" });
+  } catch (e) {
+    alert("Gagal reset: " + e.message);
+  }
+};
 
   // ==========================================
   // RENDER UI
@@ -339,6 +339,9 @@ export default function GlobalSettings({ initialFormat, onSaveSuccess }) {
             borderRadius: 10, position: "relative", overflow: "hidden",
           }}
         >
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+            Nomor urut Admin saat ini
+          </span>
           {/* Decorative Glow */}
           <div
             style={{
@@ -363,47 +366,26 @@ export default function GlobalSettings({ initialFormat, onSaveSuccess }) {
             </svg>
           </div>
 
-          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-            <span
-              style={{
-                fontFamily: "monospace", fontSize: 28, fontWeight: 700, lineHeight: 1,
-                color: currentNumber === "..." ? "rgba(255,255,255,0.3)" : COLORS.gold,
-                transition: "color 0.3s",
-              }}
-            >
-              {currentNumber === "..." ? "—" : currentNumber}
-            </span>
-            {currentNumber !== "..." && (
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>
-                / berikutnya
-              </span>
-            )}
-          </div>
+         <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
+  {["SK", "KT"].map((jenis) => (
+    <div key={jenis} style={{ textAlign: "center" }}>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4, letterSpacing: "0.1em" }}>
+        {jenis}
+      </div>
+      <span style={{
+        fontFamily: "monospace", fontSize: 24, fontWeight: 700,
+        color: currentNumbers[jenis] ? COLORS.gold : "rgba(255,255,255,0.3)",
+      }}>
+        {currentNumbers[jenis] ?? "—"}
+      </span>
+    </div>
+  ))}
+  
+</div>
         </div>
 
-        {/* Pengaturan Padding digit */}
-        <div style={{ marginBottom: 12 }}>
-          <div style={labelStyle}>Padding digit nomor urut</div>
-          <div style={{ display: "flex", gap: 3, background: "#f1f5f9", border: "0.5px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: 3, marginTop: 5 }}>
-            {[3, 4, 5].map((d) => (
-              <button
-                key={d}
-                onClick={() => setDigits(d)}
-                style={{
-                  flex: 1, padding: "6px 0", borderRadius: 6,
-                  border: "none", fontFamily: "inherit",
-                  fontSize: 12, fontWeight: 500, cursor: "pointer",
-                  background: digits === d ? COLORS.navy : "transparent",
-                  color:      digits === d ? "#fff" : "#64748b",
-                  transition: "all .15s",
-                }}
-              >
-                {d} digit
-              </button>
-            ))}
-          </div>
-        </div>
-
+        
+       
         {/* Daftar Token Aktif */}
         <div style={{ marginBottom: 10 }}>
           <div style={labelStyle}>

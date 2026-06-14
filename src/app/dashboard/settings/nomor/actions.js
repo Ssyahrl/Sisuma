@@ -53,51 +53,46 @@ export async function loadNomorSettings() {
 // 2. RESET COUNTER ADMIN
 // ==========================================
 
-/**
- * Menghapus/Mereset nomor urut surat global ke 0 untuk tahun berjalan
- */
 export async function resetAdminCounter() {
   const tahun = new Date().getFullYear();
 
   const { error } = await supabaseAdmin
     .from("nomor_counter")
     .delete()
-    .eq("jenis_surat", "GLOBAL")
+    .is("user_id", null)
     .is("template_id", null)
     .eq("tahun", tahun);
 
   if (error) throw new Error(error.message);
-
   return { ok: true };
 }
 
-/**
- * Mengecek nomor urut surat global selanjutnya
- */
 export async function loadAdminCounter() {
   const tahun = new Date().getFullYear();
+  const JENIS_LIST = ["SK", "KT"];
 
   const { data } = await supabaseAdmin
     .from("nomor_counter")
-    .select("last_number")
-    .eq("jenis_surat", "GLOBAL")
+    .select("jenis_surat, last_number")
+    .in("jenis_surat", JENIS_LIST)
+    .is("user_id", null)
     .is("template_id", null)
-    .eq("tahun", tahun)
-    .single();
+    .eq("tahun", tahun);
 
-  const next = (data?.last_number ?? 0) + 1;
-  return String(next).padStart(3, "0");
+  const result = {};
+  for (const jenis of JENIS_LIST) {
+    const row = (data || []).find(r => r.jenis_surat === jenis);
+    result[jenis] = String((row?.last_number ?? 0) + 1).padStart(3, "0");
+  }
+
+  return result; // { SK: "001", KT: "003", ... }
 }
 
 // ==========================================
 // 3. PENGATURAN FAKULTAS
 // ==========================================
 
-/**
- * Membaca pengaturan dan nomor urut khusus untuk masing-masing Fakultas
- */
 export async function loadFakultasSettings() {
-  // Ambil semua setting yang depannya "fakultas_"
   const { data, error } = await supabaseAdmin
     .from("settings")
     .select("key, value")
@@ -106,13 +101,10 @@ export async function loadFakultasSettings() {
 
   if (error) throw new Error(error.message);
 
-  // 1. Kelompokkan data setting berdasarkan "slug" fakultasnya
   const grouped = {};
   for (const row of data || []) {
     const afterPrefix = row.key.replace(/^fakultas_/, "");
     let slug = "", field = "";
-    
-    // Pisahkan slug fakultas dengan field pengaturannya
     for (const f of KNOWN_FIELDS) {
       if (afterPrefix.endsWith("_" + f)) {
         field = f;
@@ -120,20 +112,16 @@ export async function loadFakultasSettings() {
         break;
       }
     }
-    
     if (!slug) continue;
     if (!grouped[slug]) grouped[slug] = { slug };
-    
     grouped[slug][field] = row.value;
   }
 
-  // 2. Ambil semua profil dengan role FAKULTAS
   const { data: users } = await supabaseAdmin
     .from("profiles")
     .select("id, nama")
     .eq("role", "FAKULTAS");
 
-  // 3. Pasangkan (Match) slug dengan user_id berdasarkan nama fakultas
   const slugToUserId = {};
   for (const u of users || []) {
     const slugFromNama = u.nama.trim().toUpperCase().replace(/\s+/g, "_");
@@ -141,35 +129,35 @@ export async function loadFakultasSettings() {
   }
 
   const userIds = Object.values(slugToUserId);
-  const counterMap = {};
+  const JENIS_LIST = ["SK", "KT"];
+  const counterMap = {}; // { userId: { SK: 0, KT: 2 } }
 
-  // 4. Baca counter (nomor terakhir) per user_id di tahun berjalan
   if (userIds.length > 0) {
     const currentYear = new Date().getFullYear();
-
     const { data: counters } = await supabaseAdmin
       .from("nomor_counter")
-      .select("user_id, last_number")
+      .select("user_id, jenis_surat, last_number")
       .in("user_id", userIds)
-      .eq("tahun", currentYear)
-      .eq("jenis_surat", "FAKULTAS");
+      .in("jenis_surat", JENIS_LIST)
+      .eq("tahun", currentYear);
 
     for (const c of counters || []) {
-      counterMap[c.user_id] = c.last_number;
+      if (!counterMap[c.user_id]) counterMap[c.user_id] = {};
+      counterMap[c.user_id][c.jenis_surat] = c.last_number;
     }
   }
 
-  // 5. Gabungkan data pengaturan dengan data nomor selanjutnya
   return Object.values(grouped).map(f => {
     const userId = slugToUserId[f.slug];
-    const lastNum = userId ? (counterMap[userId] ?? 0) : 0;
-    
-    return {
-      ...f,
-      nextNumber: String(lastNum + 1).padStart(3, "0"),
-    };
+    const perJenis = {};
+    for (const jenis of JENIS_LIST) {
+      const last = userId ? (counterMap[userId]?.[jenis] ?? 0) : 0;
+      perJenis[jenis] = String(last + 1).padStart(3, "0");
+    }
+    return { ...f, nextNumbers: perJenis }; // { SK: "001", KT: "001" }
   });
 }
+
 
 // ==========================================
 // 4. RESET COUNTER FAKULTAS

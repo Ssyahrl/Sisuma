@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+
 // ==========================================
 // UTILS: REDIRECT LOGIC
 // ==========================================
@@ -101,6 +102,8 @@ export default function Login() {
           setChecking(false);
           return;
         }
+        document.cookie = `user_role=${profile.role.toLowerCase().trim()}; path=/; max-age=86400; SameSite=Lax`
+
 
         // Jika profil ditemukan, langsung arahkan ke dashboard masing-masing
         redirectByRole(profile.role, router);
@@ -165,20 +168,22 @@ export default function Login() {
     }
 
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
+  .from("profiles")
+  .select("role")
+  .eq("id", data.user.id)
+  .single();
 
-    if (profileError || !profile) {
-      await supabase.auth.signOut();
-      setErrorMsg("Akun tidak memiliki akses. Hubungi administrator.");
-      setLoading(false);
-      return;
-    }
+if (profileError || !profile) {
+  await supabase.auth.signOut();
+  setErrorMsg("Akun tidak memiliki akses. Hubungi administrator.");
+  setLoading(false);
+  return;
+}
 
-    redirectByRole(profile.role, router);
-  };
+// ← Tambah ini: simpan role ke cookie
+document.cookie = `user_role=${profile.role.toLowerCase().trim()}; path=/; max-age=86400; SameSite=Lax`
+
+redirectByRole(profile.role, router);
   // State Loading Layar (Mencegah kedipan form login saat session check)
   if (checking) {
     return (
@@ -285,4 +290,5 @@ export default function Login() {
       </div>
     </div>
   );
+}
 }

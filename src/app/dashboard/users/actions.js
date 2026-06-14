@@ -172,29 +172,29 @@ if (!/^[A-Za-z0-9@#$%^&*!+=\-_.]+$/.test(newPassword)) {
  * Menghapus user secara permanen dari Auth, Profile, dan membersihkan relasinya
  */
 export async function deleteUser(userId) {
-  // Ambil profil sebelum dihapus untuk mengecek role
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("nama, role")
     .eq("id", userId)
     .single();
 
-  // 1. Hapus dari auth (abaikan semua error jika tidak ditemukan)
   await supabaseAdmin.auth.admin.deleteUser(userId);
 
-  // 2. Kosongkan kepemilikan surat agar data surat tidak ikut hilang (Set Null)
   await supabaseAdmin
     .from("surat")
     .update({ user_id: null })
     .eq("user_id", userId);
 
-  // 3. Hapus profil
+  // Tambah ini — null-kan referensi di approval_steps
+  await supabaseAdmin
+    .from("approval_steps")
+    .update({ approved_by: null })
+    .eq("approved_by", userId);
+
   await supabaseAdmin.from("profiles").delete().eq("id", userId);
 
-  // 4. Jika user adalah FAKULTAS, bersihkan pengaturan khusus miliknya
   if (profile?.role === "FAKULTAS" && profile?.nama) {
     const slug = generateSlug(profile.nama);
-
     await supabaseAdmin
       .from("settings")
       .delete()
@@ -205,9 +205,7 @@ export async function deleteUser(userId) {
   revalidatePath("/dashboard/settings");
 
   return { ok: true, message: "User berhasil dihapus." };
-}
-
-// ==========================================
+}// ==========================================
 // PENGATURAN FAKULTAS (KHUSUS ROLE FAKULTAS)
 // ==========================================
 

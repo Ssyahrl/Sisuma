@@ -1,4 +1,3 @@
-// src/middleware.js
 import { NextResponse } from 'next/server'
 
 const ROLE_ALLOWED_PATHS = {
@@ -18,12 +17,21 @@ export async function middleware(req) {
   }
   const role = req.cookies.get('user_role')?.value
   if (!role) return NextResponse.redirect(new URL('/login', req.url))
+
   const resolvedRole = Object.keys(ROLE_ALLOWED_PATHS).find(key =>
     key === role || (key === 'fakultas' && role.includes('fakultas'))
   )
   if (!resolvedRole) return NextResponse.redirect(new URL('/unauthorized', req.url))
+
   const allowedPaths = ROLE_ALLOWED_PATHS[resolvedRole]
-  const isAllowed = allowedPaths.some(p => pathname.startsWith(p))
+
+  // Admin: exact match untuk /dashboard, startsWith untuk yang lain
+  const isAllowed = resolvedRole === 'admin'
+    ? allowedPaths.some(p =>
+        p === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(p)
+      )
+    : allowedPaths.some(p => pathname.startsWith(p))
+
   if (!isAllowed) return NextResponse.redirect(new URL('/unauthorized', req.url))
   return NextResponse.next()
 }

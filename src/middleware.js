@@ -14,8 +14,8 @@ export async function middleware(req) {
   const pathname = req.nextUrl.pathname
 
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
-    return NextResponse.next()
-  }
+  return NextResponse.next()  // harusnya langsung next tanpa cek cookie
+}
 
   const role = req.cookies.get('user_role')?.value
 

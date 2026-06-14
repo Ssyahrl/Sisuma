@@ -8,7 +8,7 @@ const ROLE_ALLOWED_PATHS = {
   rektor:     ['/dashboard/rektor', '/dashboard/settings/password'],
 }
 
-const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon']
+const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon', '/Vidios' ]
 
 export async function middleware(req) {
   const pathname = req.nextUrl.pathname

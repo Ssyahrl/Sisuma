@@ -19,6 +19,7 @@ const FILTERS = [
   { key: 'pending_wakil',  label: 'Perlu Review' },
   { key: 'pending_rektor', label: 'Diteruskan' },
   { key: 'rejected',       label: 'Ditolak' },
+    { key: 'approved',       label: 'Selesai' }, 
 ];
 
 // ==========================================
@@ -265,6 +266,7 @@ export default function DashboardWakilRektor() {
         pending:    results[0].count || 0,
         diteruskan: results[1].count || 0,
         rejected:   results[2].count || 0,
+        approved:   results[3].count || 0, 
       });
     }
     fetchStats();
@@ -285,6 +287,8 @@ export default function DashboardWakilRektor() {
     { label: 'Menunggu Review',      value: stats.pending,    color: '#c9993a', bg: '#fdf6e7' },
     { label: 'Diteruskan ke Rektor', value: stats.diteruskan, color: '#1a2744', bg: '#e8ecf4' },
     { label: 'Ditolak',              value: stats.rejected,   color: '#dc2626', bg: '#fef2f2' },
+    { label: 'Selesai',              value: stats.approved,   color: '#15803d', bg: '#f0fdf4' }, 
+];
   ];
 
   // 5. RENDER UI
@@ -306,7 +310,7 @@ export default function DashboardWakilRektor() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 2rem' }}>
         
         {/* Statistik Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: '1.5rem' }}>
           {STAT_CARDS.map(({ label, value, color, bg }) => (
             <div
               key={label}

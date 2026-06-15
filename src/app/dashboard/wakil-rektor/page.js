@@ -289,7 +289,7 @@ export default function DashboardWakilRektor() {
     { label: 'Ditolak',              value: stats.rejected,   color: '#dc2626', bg: '#fef2f2' },
     { label: 'Selesai',              value: stats.approved,   color: '#15803d', bg: '#f0fdf4' }, 
 ];
-  ];
+  
 
   // 5. RENDER UI
   return (

@@ -187,11 +187,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-4 border-t border-white/10 shrink-0 space-y-1">
-        <NavItem
-          icon={<HelpCircle size={20} />}
-          label="Support"
-          collapsed={isCollapsed}
-        />
+
         <NavItem
           icon={<LogOut size={20} />}
           label="Logout"

@@ -26,8 +26,9 @@ export default function UnauthorizedPage() {
         </div>
 
         <div className="fade-in" style={{opacity:0}}>
-          <p style={{fontSize:'15px',color:'#6b7280',margin:'1rem 0 0.25rem'}}>Kamu tidak punya izin mengakses halaman ini.</p>
+          <p style={{fontSize:'15px',color:'#6b7280',margin:'1rem 0 0.25rem'}}>Mau ngapain ya Kak.....</p>
           <p style={{fontSize:'13px',color:'#9ca3af',margin:'0 0 1.5rem'}}>Balik ke halaman yang sesuai dengan rolemu ya!</p>
+          <p style={{fontSize:'11px', color:'#12ca3af', margin:'0 0 2.1rem'}}>cieee ga bisaa yaaa</p>
         </div>
 
         <a href="/login" style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'10px 20px',background:'#FCEBEB',color:'#A32D2D',border:'0.5px solid #F09595',borderRadius:'8px',fontSize:'14px',textDecoration:'none',fontWeight:500}}>

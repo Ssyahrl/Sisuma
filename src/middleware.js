@@ -8,13 +8,25 @@ const ROLE_ALLOWED_PATHS = {
   rektor:     ['/dashboard/rektor', '/dashboard/settings/password'],
 }
 
-const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon', '/Vidios' ]
+const ALL_KNOWN_PATHS = [
+  '/dashboard', '/dashboard/templates', '/dashboard/users', '/dashboard/settings',
+  '/dashboard/fakultas', '/dashboard/settings/password',
+  '/dashboard/sekretaris', '/dashboard/wakil-rektor', '/dashboard/rektor',
+]
+
+const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon', '/Vidios']
 
 export async function middleware(req) {
   const pathname = req.nextUrl.pathname
+
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p)) || pathname === '/') {
     return NextResponse.next()
   }
+
+  // Kalau route ga dikenal sama sekali → biarkan Next.js render 404
+  const isKnownPath = ALL_KNOWN_PATHS.some(p => pathname.startsWith(p))
+  if (!isKnownPath) return NextResponse.next()
+
   const role = req.cookies.get('user_role')?.value
   if (!role) return NextResponse.redirect(new URL('/login', req.url))
 
@@ -25,7 +37,6 @@ export async function middleware(req) {
 
   const allowedPaths = ROLE_ALLOWED_PATHS[resolvedRole]
 
-  // Admin: exact match untuk /dashboard, startsWith untuk yang lain
   const isAllowed = resolvedRole === 'admin'
     ? allowedPaths.some(p =>
         p === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(p)

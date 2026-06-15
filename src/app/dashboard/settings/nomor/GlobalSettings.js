@@ -340,7 +340,7 @@ const handleReset = async () => {
           }}
         >
           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
-            Nomor urut Admin saat ini
+            Nomor urut Admin berikut nya
           </span>
           {/* Decorative Glow */}
           <div

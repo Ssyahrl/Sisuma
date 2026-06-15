@@ -260,8 +260,9 @@ export default function DashboardWakilRektor() {
         supabase.from('surat').select('id', { count: 'exact' }).eq('status', 'pending_wakil'),
         supabase.from('surat').select('id', { count: 'exact' }).eq('status', 'pending_rektor'),
         supabase.from('surat').select('id', { count: 'exact' }).eq('status', 'rejected'),
+        supabase.from('surat').select('id', { count: 'exact' }).eq('status', 'approved'),
       ]);
-      
+
       setStats({
         pending:    results[0].count || 0,
         diteruskan: results[1].count || 0,

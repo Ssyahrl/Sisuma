@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { FileText, FileDown } from "lucide-react";
+
+const pdfEnabled = process.env.NEXT_PUBLIC_PDF_ENABLED === "true";
 
 // ==========================================
 // KONSTANTA & PENGATURAN TAMPILAN
@@ -398,40 +401,36 @@ function SuratDetailModal({ suratId, createdAt, onClose }) {
         </div>
 
         {/* FOOTER MODAL */}
-        <div style={{ padding: "12px 20px", borderTop: "0.5px solid #e5e7eb", background: "#fafafa", display: "flex", gap: 8 }}>
-          {hasNomor ? (
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              style={{
-                flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12, fontWeight: 600, border: "none",
-                background: downloading ? "#d1fae5" : "#16a34a",
-                color: "#fff", cursor: downloading ? "not-allowed" : "pointer",
-              }}
-            >
-              {downloading ? "Menyiapkan..." : "Download Surat"}
-            </button>
-          ) : (
-            <button
-              disabled
-              style={{
-                flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12, fontWeight: 600,
-                background: "#f3f4f6", color: "#9ca3af", border: "0.5px solid #e5e7eb", cursor: "not-allowed",
-              }}
-            >
-              Belum Ada Surat
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1, padding: "9px 0", borderRadius: 8, background: "#111", color: "#fff",
-              border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer",
-            }}
-          >
-            Tutup
+       <div style={{ padding: "12px 20px", borderTop: "0.5px solid #e5e7eb", background: "#fafafa", display: "flex", gap: 8 }}>
+  {hasNomor ? (
+    <>
+      <a href={`/api/surat/${suratId}/download?format=docx`} style={{ flex: 1, textDecoration: "none" }}>
+        <button style={{ width: "100%", padding: "9px 0", borderRadius: 8, background: "#2563eb", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+          <FileText size={14} /> Word
+        </button>
+      </a>
+
+      {pdfEnabled ? (
+        <a href={`/api/surat/${suratId}/download?format=pdf`} style={{ flex: 1, textDecoration: "none" }}>
+          <button style={{ width: "100%", padding: "9px 0", borderRadius: 8, background: "#16a34a", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            <FileDown size={14} /> PDF
           </button>
-        </div>
+        </a>
+      ) : (
+        <button disabled style={{ flex: 1, padding: "9px 0", borderRadius: 8, background: "#f3f4f6", color: "#9ca3af", border: "0.5px solid #e5e7eb", fontSize: 12, fontWeight: 600, cursor: "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+          <FileDown size={14} /> PDF
+        </button>
+      )}
+    </>
+  ) : (
+    <button disabled style={{ flex: 1, padding: "9px 0", borderRadius: 8, background: "#f3f4f6", color: "#9ca3af", border: "0.5px solid #e5e7eb", fontSize: 12, fontWeight: 600 }}>
+      Belum Ada Surat
+    </button>
+  )}
+  <button onClick={onClose} style={{ flex: 1, padding: "9px 0", borderRadius: 8, background: "#111", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none" }}>
+    Tutup
+  </button>
+</div>
       </div>
     </div>
   );

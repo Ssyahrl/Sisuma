@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
 
 const ROLE_ALLOWED_PATHS = {
-  admin:      ['/dashboard', '/dashboard/templates', '/dashboard/users', '/dashboard/settings'],
-  fakultas:   ['/dashboard/fakultas', '/dashboard/settings/password'],
-  sekretaris: ['/dashboard/sekretaris', '/dashboard/settings/password'],
-  warek:      ['/dashboard/wakil-rektor', '/dashboard/settings/password'],
-  rektor:     ['/dashboard/rektor', '/dashboard/settings/password'],
+  admin:      ['/dashboard', '/dashboard/templates', '/dashboard/users', '/dashboard/settings', '/dashboard/arsip'],
+  fakultas:   ['/dashboard/fakultas', '/dashboard/settings/password', '/dashboard/fakultas/arsip'],
+  sekretaris: ['/dashboard/sekretaris', '/dashboard/settings/password', ],
+  warek:      ['/dashboard/wakil-rektor', '/dashboard/settings/password', ],
+  rektor:     ['/dashboard/rektor', '/dashboard/settings/password', ],
 }
 
 const ALL_KNOWN_PATHS = [
   '/dashboard', '/dashboard/templates', '/dashboard/users', '/dashboard/settings',
   '/dashboard/fakultas', '/dashboard/settings/password',
   '/dashboard/sekretaris', '/dashboard/wakil-rektor', '/dashboard/rektor',
+  '/dashboard/arsip',
 ]
 
 const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon', '/Vidios']

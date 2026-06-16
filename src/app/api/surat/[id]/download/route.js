@@ -2,53 +2,42 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import CloudConvert from "cloudconvert";
 
 export const runtime = "nodejs";
 
 export async function GET(req, { params }) {
   try {
     const { id } = await params;
-    console.log("HIT DOWNLOAD ROUTE, id:", id);
+    const { searchParams } = new URL(req.url);
+    const format = searchParams.get("format") || "docx";
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Fetch surat
     const { data: surat, error } = await supabase
       .from("surat")
       .select(`id, nomor_surat, data_json, template_id`)
       .eq("id", id)
       .single();
 
-    console.log("SURAT:", JSON.stringify(surat));
-    console.log("ERROR:", error);
-
     if (error || !surat) return NextResponse.json({ error: "Surat tidak ditemukan" }, { status: 404 });
     if (!surat.nomor_surat) return NextResponse.json({ error: "Surat belum memiliki nomor" }, { status: 400 });
 
-    // 2. Fetch template terpisah
-    const { data: template, error: tErr } = await supabase
+    const { data: template } = await supabase
       .from("templates")
       .select("nama_template, file_url")
       .eq("id", surat.template_id)
       .single();
 
-    console.log("TEMPLATE:", JSON.stringify(template));
-    console.log("TEMPLATE ERR:", tErr);
+    if (!template?.file_url) return NextResponse.json({ error: "File template tidak ditemukan" }, { status: 404 });
 
-    const fileUrl = template?.file_url;
-    console.log("FILE URL:", fileUrl);
-
-    if (!fileUrl) return NextResponse.json({ error: "File template tidak ditemukan" }, { status: 404 });
-
-    // 3. Fetch file .docx dari storage
-    const fileRes = await fetch(fileUrl);
+    const fileRes = await fetch(template.file_url);
     if (!fileRes.ok) throw new Error("Gagal mengambil file dari storage");
     const buffer = Buffer.from(await fileRes.arrayBuffer());
 
-    // 4. Isi variabel
     const now = new Date();
     const dataMap = {
       nomor_surat: surat.nomor_surat || "",
@@ -62,15 +51,47 @@ export async function GET(req, { params }) {
     const zip = new PizZip(buffer);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
     doc.render(dataMap);
+    const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
+    const baseName = `surat_${surat.nomor_surat.replace(/\//g, "-")}`;
 
-    const outputBuffer = doc.getZip().generate({ type: "nodebuffer" });
-    const fileName = `surat_${surat.nomor_surat.replace(/\//g, "-")}.docx`;
+    // Return DOCX
+    if (format === "docx") {
+      return new NextResponse(docxBuffer, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "Content-Disposition": `attachment; filename="${baseName}.docx"`,
+        },
+      });
+    }
 
-    return new NextResponse(outputBuffer, {
+    // Convert ke PDF
+    const cloudConvert = new CloudConvert(process.env.CLOUDCONVERT_API_KEY);
+
+    let job = await cloudConvert.jobs.create({
+      tasks: {
+        "upload-docx":    { operation: "import/upload" },
+        "convert-to-pdf": { operation: "convert", input: "upload-docx", input_format: "docx", output_format: "pdf" },
+        "export-pdf":     { operation: "export/url", input: "convert-to-pdf" },
+      },
+    });
+
+    const uploadTask = job.tasks.find(t => t.name === "upload-docx");
+    await cloudConvert.tasks.upload(uploadTask, new Blob([docxBuffer]), `${baseName}.docx`);
+
+    job = await cloudConvert.jobs.wait(job.id);
+
+    const exportTask = job.tasks.find(t => t.name === "export-pdf");
+    const pdfUrl = exportTask.result.files[0].url;
+
+    const pdfRes = await fetch(pdfUrl);
+    const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${baseName}.pdf"`,
       },
     });
 

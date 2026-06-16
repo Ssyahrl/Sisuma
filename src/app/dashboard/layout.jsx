@@ -107,10 +107,20 @@ export default function DashboardLayout({ children }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+<PageWrapper pathname={pathname}>
+  {children}
+</PageWrapper>
       </div>
     </div>
+  );
+}
+function PageWrapper({ children, pathname }) {
+  return (
+    <main
+      key={pathname}
+      className="page-transition flex-1 overflow-auto p-4 sm:p-6 lg:p-8"
+    >
+      {children}
+    </main>
   );
 }

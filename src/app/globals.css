@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.page-transition {
+  animation: pageIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}

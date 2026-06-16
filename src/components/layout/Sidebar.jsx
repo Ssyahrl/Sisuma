@@ -17,6 +17,7 @@ import {
   CheckSquare,
   Stamp,
   UserPlus,
+  Archive,
   
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -25,6 +26,7 @@ import Image from "next/image";
 const adminNav = [
   { icon: <LayoutDashboard size={20} />, label: "Dashboard", href: "/dashboard" },
   { icon: <FileText size={20} />, label: "Templates", href: "/dashboard/templates" },
+  { icon: <Archive size={20} />, label: "Arsip Surat", href: "/dashboard/arsip" },
   { icon: <UserPlus size={20} />, label: "Manajemen User", href: "/dashboard/users" },
   { icon: <Settings size={20} />, label: "Settings", href: "/dashboard/settings/nomor" },
 ];
@@ -32,6 +34,7 @@ const adminNav = [
 const fakultasNav = [
   { icon: <LayoutDashboard size={20} />, label: "Dashboard", href: "/dashboard/fakultas" },
   { icon: <FilePenLine size={20} />, label: "Pengajuan Surat", href: "/dashboard/fakultas/pengajuan" },
+  { icon: <Archive size={20} />, label: "Arsip Surat", href: "/dashboard/fakultas/arsip" },
   {icon: <Settings size={20} />, label: "Settings", href: "/dashboard/settings/password" },
   
 ];

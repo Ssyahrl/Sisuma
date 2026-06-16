@@ -9,9 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.103.2",
+    "cloudconvert": "^3.0.0",
     "date-fns": "^4.1.0",
     "docx": "^9.6.1",
     "docxtemplater": "^3.68.6",

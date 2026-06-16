@@ -10,8 +10,10 @@ import {
   Shield,
   PenSquare,
   X,
+  Eye,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+
 
 // ==========================================
 // KONSTANTA
@@ -33,6 +35,8 @@ export default function PengajuanSuratPage() {
   const [selectedJenis, setSelectedJenis] = useState(null);
   const [catatanFakultas, setCatatanFakultas] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+const [previewId, setPreviewId] = useState(null);
 
   // State untuk fitur Upload File (Mesin siap, tinggal tambah UI-nya)
   const [file, setFile] = useState(null);
@@ -129,6 +133,28 @@ export default function PengajuanSuratPage() {
     }
   };
 
+  const handleDeleteDraft = async (e, suratId) => {
+  e.stopPropagation(); // Jangan trigger select
+  if (!confirm("Hapus draft surat ini?")) return;
+  
+  setDeletingId(suratId);
+  try {
+    const { error } = await supabase
+      .from("surat")
+      .delete()
+      .eq("id", suratId);
+      
+    if (error) throw error;
+    
+    setJenisSurat(prev => prev.filter(s => s.id !== suratId));
+    if (selectedJenis?.id === suratId) setSelectedJenis(null);
+  } catch (err) {
+    alert("Gagal menghapus: " + err.message);
+  } finally {
+    setDeletingId(null);
+  }
+};
+
   // ==========================================
   // RENDER TAMPILAN UI
   // ==========================================
@@ -176,34 +202,79 @@ export default function PengajuanSuratPage() {
               <div className="grid grid-cols-2 gap-2">
                 {jenisSurat.map(s => (
                   <div
-                    key={s.id}
-                    onClick={() => setSelectedJenis(s)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
-                      ${
-                        selectedJenis?.id === s.id
-                          ? "border-[#0B2A4A] bg-[#0B2A4A]/5"
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                      }`}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0
-                      ${selectedJenis?.id === s.id ? "bg-[#0B2A4A]" : "bg-gray-100"}`}
-                    >
-                      <FileText size={14} className={selectedJenis?.id === s.id ? "text-white" : "text-gray-400"} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-gray-700 truncate">
-                        {s.templates?.nama_template || "Surat"}
-                      </p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        {new Date(s.created_at).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </div>
+  key={s.id}
+  onClick={() => setSelectedJenis(s)}
+  className={`relative flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
+    ${
+      selectedJenis?.id === s.id
+        ? "border-[#0B2A4A] bg-[#0B2A4A]/5"
+        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+    }`}
+>
+  {/* Tombol Hapus */}
+  <button
+    onClick={(e) => handleDeleteDraft(e, s.id)}
+    disabled={deletingId === s.id}
+    className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-gray-100 hover:bg-red-100 flex items-center justify-center transition-colors group"
+    title="Hapus draft"
+  >
+    {deletingId === s.id ? (
+      <span className="w-2.5 h-2.5 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+    ) : (
+      <X size={10} className="text-gray-400 group-hover:text-red-500" />
+    )}
+  </button>
+
+  <div
+    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+    ${selectedJenis?.id === s.id ? "bg-[#0B2A4A]" : "bg-gray-100"}`}
+  >
+    <FileText size={14} className={selectedJenis?.id === s.id ? "text-white" : "text-gray-400"} />
+  </div>
+  <div className="min-w-0 pr-4">
+    <p className="text-xs font-semibold text-gray-700 truncate">
+      {s.templates?.nama_template || "Surat"}
+    </p>
+    <p className="text-[10px] text-gray-400 mt-0.5">
+      {new Date(s.created_at).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}
+
+    </p>
+    <button
+      onClick={(e) => { e.stopPropagation(); setPreviewId(s.id); }}
+      className="text-gray-300 hover:text-[#0B2A4A] transition-colors"
+      title="Preview surat"
+    >
+      <Eye size={12} />
+    </button>
+  </div>
+  {previewId && (
+  <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6">
+    <div className="bg-white rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-xl overflow-hidden">
+      {/* Header modal */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <p className="text-sm font-semibold text-gray-800">Preview Surat</p>
+        <button
+          onClick={() => setPreviewId(null)}
+          className="w-7 h-7 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+        >
+          <X size={14} className="text-gray-500" />
+        </button>
+      </div>
+
+      {/* Iframe */}
+      <iframe
+        src={`/api/surat/${previewId}/preview`}
+        className="flex-1 w-full"
+        title="Preview Surat"
+      />
+    </div>
+  </div>
+)}
+</div>
                 ))}
               </div>
             )}

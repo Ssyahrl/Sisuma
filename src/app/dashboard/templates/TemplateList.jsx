@@ -182,8 +182,8 @@ export default function TemplateList({ onSelect }) {
           MODAL: EDIT TEMPLATE
           ========================================== */}
       {editData && (
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-100 backdrop-blur-sm p-4 overflow-y-auto">
-  <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md my-auto">
+       <div className="fixed inset-0  flex items-start justify-center  p-4 overflow-y-auto">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mt-8 mb-8">
             
             {/* Header Modal */}
             <div className="px-6 pt-6 pb-4 flex items-center justify-between">

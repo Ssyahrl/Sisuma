@@ -81,7 +81,7 @@ export default function TemplatesPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex gap-6 h-[calc(100vh-140px)]">
+        <div className="flex gap-6 min-h-[calc(100vh-140px)]">
           
           {/* Panel Kiri: List Template */}
           <div className="w-80 shrink-0">

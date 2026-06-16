@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+
 const APPROVAL_CHAINS = {
   SEKRETARIS: ["SEKRETARIS"],
   WAREK:      ["SEKRETARIS", "WAREK"],
@@ -18,10 +19,22 @@ async function getUser(req) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return { user: null };
   const token = authHeader.replace("Bearer ", "");
-  const supabase = getSupabaseAdmin();
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  return { user, error };
+
+  try {
+    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
+    
+    // Validasi expiry
+    if (!payload.sub || payload.exp < Math.floor(Date.now() / 1000)) {
+      return { user: null, error: new Error("Token expired") };
+    }
+    
+    return { user: { id: payload.sub, email: payload.email }, error: null };
+  } catch {
+    return { user: null, error: new Error("Invalid token") };
+  }
 }
+
+
 
 export async function POST(req) {
   try {

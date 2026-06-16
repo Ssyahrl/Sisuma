@@ -117,17 +117,26 @@ export default function TemplateEditor({ template }) {
     }
   };
 
-  const handleAjukanAdmin = async () => {
-    if (!tujuan) { 
-      alert("Pilih tujuan terlebih dahulu"); 
-      return; 
-    }
-    
-    setSubmitting(true);
+const handleAjukanAdmin = async () => {
+  if (!tujuan) { 
+    alert("Pilih tujuan terlebih dahulu"); 
+    return; 
+  }
+
+  // Validasi semua field harus diisi
+  const emptyFields = fields.filter(f => !values[f]?.trim());
+  if (emptyFields.length > 0) {
+    alert(`Mohon isi field berikut:\n${emptyFields.join(", ")}`);
+    return;
+  }
+
+  setSubmitting(true);
     
     try {
       // Ambil session token untuk Authorization API
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("session:", session);
 
       const res = await fetch("/api/surat/admin", {
         method: "POST",
@@ -169,12 +178,20 @@ export default function TemplateEditor({ template }) {
               Kirim ke Fakultas
             </button>
 
-            <button
-              onClick={() => { setShowAdminModal(true); setTujuan(null); }}
-              className="border border-violet-600 text-violet-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-violet-50 transition"
-            >
-              Ajukan sebagai Admin
-            </button>
+         <button
+  onClick={() => { 
+    const emptyFields = fields.filter(f => !values[f]?.trim());
+    if (emptyFields.length > 0) {
+      alert(`Isi semua variabel dulu:\n${emptyFields.join(", ")}`);
+      return;
+    }
+    setShowAdminModal(true); 
+    setTujuan(null); 
+  }}
+  className="border border-violet-600 text-violet-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-violet-50 transition"
+>
+  Ajukan sebagai Admin
+</button>
           </div>
         </div>
 

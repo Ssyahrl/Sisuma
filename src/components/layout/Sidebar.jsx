@@ -186,7 +186,7 @@ export default function Sidebar() {
         ))}
       </div>
 
-      
+    
 
       {/* Footer */}
       <div className="p-4 border-t border-white/10 shrink-0 space-y-1">
@@ -199,7 +199,7 @@ export default function Sidebar() {
           onClick={handleLogout}
         />
         {!isCollapsed && (
-          <p className="text-white/20 text-xs text-center mt-3">V 1.2.6</p>
+          <p className="text-white/20 text-xs text-center mt-3">V 1.2.7</p>
         )}
       </div>
     </div>

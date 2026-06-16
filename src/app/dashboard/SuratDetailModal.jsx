@@ -432,7 +432,7 @@ export default function SuratDetailModal({ suratId, createdAt, onClose }) {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {steps.map(({ role, status, catatan, updated_at }, idx) => {
+                {steps.filter(s => s.role !== 'admin').map(({ role, status, catatan, updated_at }, idx) => {
                   const cfg = stepStatusStyle(status);
                   return (
                     <div

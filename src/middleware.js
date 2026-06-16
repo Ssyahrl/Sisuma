@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 
 const ROLE_ALLOWED_PATHS = {
-  admin:      ['/dashboard', '/dashboard/templates', '/dashboard/users', '/dashboard/settings', '/dashboard/arsip'],
+  admin:      ['/dashboard', '/dashboard/templates', '/dashboard/users', '/dashboard/settings', '/dashboard/arsip', '/dashboard/surat', '/dashboard/approvals'],
   fakultas:   ['/dashboard/fakultas', '/dashboard/settings/password', '/dashboard/fakultas/arsip'],
-  sekretaris: ['/dashboard/sekretaris', '/dashboard/settings/password', ],
-  warek:      ['/dashboard/wakil-rektor', '/dashboard/settings/password', ],
-  rektor:     ['/dashboard/rektor', '/dashboard/settings/password', ],
+  sekretaris: ['/dashboard/sekretaris', '/dashboard/settings/password', '/dashboard/approvals'],
+  warek:      ['/dashboard/wakil-rektor', '/dashboard/settings/password', '/dashboard/approvals'],
+  rektor:     ['/dashboard/rektor', '/dashboard/settings/password', '/dashboard/approvals'],
 }
 
 const ALL_KNOWN_PATHS = [
@@ -13,6 +13,8 @@ const ALL_KNOWN_PATHS = [
   '/dashboard/fakultas', '/dashboard/settings/password',
   '/dashboard/sekretaris', '/dashboard/wakil-rektor', '/dashboard/rektor',
   '/dashboard/arsip',
+  '/dashboard/surat',        
+  '/dashboard/approvals',
 ]
 
 const PUBLIC_PATHS = ['/login', '/unauthorized', '/images', '/favicon', '/Vidios']

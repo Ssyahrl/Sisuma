@@ -1,10 +1,12 @@
   "use client";
-  // app/dashboard/page.js
+  // app/dashboard/page.jsx
 
   import SuratDetailModal, { statusConfig } from "./SuratDetailModal";
   import { useState, useEffect } from "react";
   import { useRouter } from "next/navigation";
   import { supabase } from "@/lib/supabase";
+
+  
   import {
     FileText,
     AlertCircle,
@@ -158,16 +160,12 @@ const ITEMS_PER_PAGE = 5;
         setPendingList(data || []);
         setCurrentPage(1);
 
-        // Ambil daftar surat yang diajukan oleh admin sendiri
-        if (session) {
-          const adminRes = await fetch("/api/surat/admin", {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          }).then((r) => r.json());
-
-          setAdminSurat(adminRes.data || []);
-        }
+       
+// Ambil daftar surat yang diajukan oleh admin sendiri
+const adminRes = await fetch("/api/surat/admin", {
+  headers: { Authorization: `Bearer ${session.access_token}` },
+}).then(r => r.json());
+setAdminSurat(adminRes.data || []);
 
         setLoading(false);
       };

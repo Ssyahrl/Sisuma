@@ -98,7 +98,9 @@ export default function ApprovalDetailPage() {
   // 3. LOGIKA ALUR PERSETUJUAN
   // ==========================================
   const currentRole = ROLE_MAP[surat?.status] || null;
-  const canAct = !!currentRole;
+  const canAct = !!currentRole  && !isFinished;
+  const isFinished = surat?.status === "rejected" || surat?.status === "approved";
+
 
   const getNextStatus = () => {
     const flow = surat?.templates?.approval_flow || [];

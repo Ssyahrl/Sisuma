@@ -101,7 +101,7 @@ export default function Sidebar() {
   };
 
   if (loading) return (
-    <div className="h-screen w-64 bg-[#0B2A4A] flex items-center justify-center">
+    <div className="h-full w-64 bg-[#0B2A4A] flex items-center justify-center shrink-0">
       <div className="text-white/30 text-xs">Loading...</div>
     </div>
   );
@@ -118,7 +118,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`h-screen bg-[#0B2A4A] flex flex-col transition-all duration-300 ease-in-out shrink-0 relative ${
+      className={`h-full bg-[#0B2A4A] flex flex-col transition-all duration-300 ease-in-out shrink-0 relative ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >

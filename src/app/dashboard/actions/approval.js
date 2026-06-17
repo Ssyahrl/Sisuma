@@ -45,6 +45,10 @@ export async function processApproval(suratId, role, action, catatan = "") {
 
   if (suratErr || !surat) throw new Error("Surat tidak ditemukan");
 
+  if (surat.status === "rejected" || surat.status === "approved") {
+    throw new Error("Surat sudah diproses dan tidak bisa diubah lagi.");
+  }
+
   // 2. Tentukan alur persetujuan
   const flow = FULL_CHAINS[surat.tujuan] || ["ADMIN"];
 

@@ -91,38 +91,43 @@ function Modal({ surat, onClose, onAction }) {
 
   if (!surat) return null;
 
+  const canAct = surat.status === 'pending_sekretaris';
+
   const isLastStep   = surat.tujuan === 'SEKRETARIS';
   const approveLabel = isLastStep ? 'Setujui' : 'Teruskan ke Wakil Rektor';
   const ApproveIcon  = isLastStep ? CheckCircle : ChevronRight;
 
   async function handleClick(action) {
-  if (action === 'reject' && !catatan.trim()) {
-    alert("Wajib mengisi catatan alasan penolakan.");
-    return;
+    if (action === 'reject' && !catatan.trim()) {
+      alert("Wajib mengisi catatan alasan penolakan.");
+      return;
+    }
+    setLoading(true);
+    await onAction(surat.id, action, catatan);
+    setLoading(false);
+    onClose();
   }
-  setLoading(true);
-  await onAction(surat.id, action, catatan);
-  setLoading(false);
-  onClose();
-}
 
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 50,
-        background: 'rgba(0,0,0,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
-      }}
+  style={{
+    position: 'fixed', inset: 0, zIndex: 50,
+    background: 'rgba(0,0,0,0.45)',
+    backdropFilter: 'blur(3px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+  }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        style={{
-          background: '#fff', borderRadius: 16,
-          width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-        }}
-      >
+style={{
+  background: '#fff', borderRadius: 16, width: '100%', maxWidth: 690,
+  maxHeight: 'calc(100vh - 120px)',
+  overflowY: 'auto',
+  boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+  transform: 'scale(0.85)',
+  transformOrigin: 'top center',
+  fontSize: 14, color: '#1a2744',
+}}  >
         {/* Header Modal */}
         <div
           style={{
@@ -220,53 +225,75 @@ function Modal({ surat, onClose, onAction }) {
           )}
         </div>
 
-        {/* Input Catatan Sekretaris */}
-        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6' }}>
-          <label style={{ display: 'block', fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
-            Catatan Sekretaris (opsional)
-          </label>
-          <textarea
-            value={catatan}
-            onChange={(e) => setCatatan(e.target.value)}
-            placeholder="Tambahkan catatan untuk level approval berikutnya atau alasan penolakan..."
-            rows={3}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              border: '1px solid #e5e7eb', borderRadius: 8,
-              padding: '10px 14px', fontSize: 14, color: '#374151',
-              resize: 'vertical', fontFamily: 'inherit', outline: 'none',
-            }}
-          />
+        {/* Textarea + Tombol Aksi — kondisional berdasarkan canAct */}
+        <div style={{ padding: '1.25rem 1.5rem' }}>
+          {canAct ? (
+            <>
+              {/* Input Catatan — hanya muncul kalau bisa aksi */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
+                  Catatan Sekretaris (opsional)
+                </label>
+                <textarea
+                  value={catatan}
+                  onChange={(e) => setCatatan(e.target.value)}
+                  placeholder="Tambahkan catatan untuk level approval berikutnya atau alasan penolakan..."
+                  rows={3}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    border: '1px solid #e5e7eb', borderRadius: 8,
+                    padding: '10px 14px', fontSize: 14, color: '#374151',
+                    resize: 'vertical', fontFamily: 'inherit', outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Tombol Aksi */}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => handleClick('reject')}
+                  disabled={loading}
+                  style={{
+                    background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5',
+                    borderRadius: 8, padding: '9px 20px', fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                    opacity: loading ? 0.6 : 1,
+                  }}
+                >
+                  <XCircle size={15} /> Tolak
+                </button>
+                <button
+                  onClick={() => handleClick('approve')}
+                  disabled={loading}
+                  style={{
+                    background: '#1a2744', color: '#fff', border: 'none',
+                    borderRadius: 8, padding: '9px 22px', fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                    opacity: loading ? 0.6 : 1,
+                  }}
+                >
+                  <ApproveIcon size={15} /> {loading ? 'Memproses...' : approveLabel}
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Pesan info kalau tidak bisa diaksi */
+            <div style={{
+              padding: '12px 16px', borderRadius: 8, fontSize: 13,
+              fontWeight: 500, textAlign: 'center',
+              ...(surat.status === 'rejected'
+                ? { background: '#fef2f2', color: '#dc2626' }
+                : surat.status === 'approved'
+                ? { background: '#f0fdf4', color: '#15803d' }
+                : { background: '#e8ecf4', color: '#1a2744' }),
+            }}>
+              {surat.status === 'rejected' && '❌ Surat ini sudah ditolak dan tidak dapat diproses lagi.'}
+              {surat.status === 'approved' && '✅ Surat ini sudah disetujui.'}
+              {(surat.status === 'pending_wakil' || surat.status === 'pending_rektor') && '⏳ Surat sedang menunggu persetujuan pihak lain.'}
+            </div>
+          )}
         </div>
 
-        {/* Tombol Aksi */}
-        <div style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button
-            onClick={() => handleClick('reject')}
-            disabled={loading}
-            style={{
-              background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5',
-              borderRadius: 8, padding: '9px 20px', fontSize: 14, fontWeight: 600,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            <XCircle size={15} /> Tolak
-          </button>
-          
-          <button
-            onClick={() => handleClick('approve')}
-            disabled={loading}
-            style={{
-              background: '#1a2744', color: '#fff', border: 'none',
-              borderRadius: 8, padding: '9px 22px', fontSize: 14, fontWeight: 600,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            <ApproveIcon size={15} /> {loading ? 'Memproses...' : approveLabel}
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -354,18 +381,8 @@ export default function DashboardSekretarisRektor() {
 
   // 5. RENDER UI
   return (
-    <div style={{ minHeight: '100vh', background: '#f1f5f9', fontFamily: 'system-ui, sans-serif' }}>
-      {/* Header Dashboard */}
-      <div style={{ background: '#1a2744', padding: '1.5rem 2rem' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <p style={{ margin: 0, color: '#c9993a', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
-            SISUMA — Sistem Manajemen Surat
-          </p>
-          <h1 style={{ margin: '6px 0 0', color: '#fff', fontSize: 22, fontWeight: 700 }}>
-            Dashboard Sekretaris Rektor
-          </h1>
-        </div>
-      </div>
+    <div style={{ background: '#f1f5f9', fontFamily: 'system-ui, sans-serif' }}>
+          
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 2rem' }}>
         {/* Statistik Cards */}

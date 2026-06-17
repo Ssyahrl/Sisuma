@@ -197,8 +197,6 @@ function SuratDetailModal({ suratId, createdAt, onClose }) {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        background: "rgba(0,0,0,0.45)",
-        backdropFilter: "blur(3px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

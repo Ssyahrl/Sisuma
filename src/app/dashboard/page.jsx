@@ -102,7 +102,9 @@
     const [loading, setLoading]         = useState(true);
     const [selectedSuratId, setSelectedSuratId] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-const ITEMS_PER_PAGE = 5;
+    const ITEMS_PER_PAGE = 5;
+    const [adminPage, setAdminPage] = useState(1);
+    const ADMIN_PER_PAGE = 5;
 
     // 2. DATA FETCHING (EFFECTS)
     useEffect(() => {
@@ -187,6 +189,12 @@ setAdminSurat(adminRes.data || []);
 const paginatedList = pendingList.slice(
   (currentPage - 1) * ITEMS_PER_PAGE,
   currentPage * ITEMS_PER_PAGE
+);
+
+const totalAdminPages = Math.ceil(adminSurat.length / ADMIN_PER_PAGE);
+const paginatedAdmin = adminSurat.slice(
+  (adminPage - 1) * ADMIN_PER_PAGE,
+  adminPage * ADMIN_PER_PAGE
 );
 
     // ==========================================
@@ -367,13 +375,14 @@ const paginatedList = pendingList.slice(
                     </thead>
 
                     <tbody>
-                      {adminSurat.map((row, i) => {
+                      {paginatedAdmin.map((row, i) => {
                         const st = statusConfig[row.status] || statusConfig.draft;
+                        
 
                         return (
                           <tr
                             key={row.id}
-                            style={{ borderBottom: i < adminSurat.length - 1 ? "0.5px solid #e5e7eb" : "none" }}
+                             style={{ borderBottom: i < paginatedAdmin.length - 1 ? "0.5px solid #e5e7eb" : "none" }}
                           >
                             {/* No. Surat */}
                             <td style={{ padding: "11px 18px" }}>
@@ -434,7 +443,41 @@ const paginatedList = pendingList.slice(
                       })}
                     </tbody>
                   </table>
+                  
                 )}
+                {totalAdminPages > 1 && (
+  <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-100">
+    <button
+      onClick={() => setAdminPage((p) => Math.max(p - 1, 1))}
+      disabled={adminPage === 1}
+      className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+    >
+      ←
+    </button>
+
+    {Array.from({ length: totalAdminPages }, (_, i) => i + 1).map((page) => (
+      <button
+        key={page}
+        onClick={() => setAdminPage(page)}
+        className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
+          adminPage === page
+            ? "bg-[#0B2A4A] text-white"
+            : "border border-gray-200 text-gray-500 hover:bg-gray-50"
+        }`}
+      >
+        {page}
+      </button>
+    ))}
+
+    <button
+      onClick={() => setAdminPage((p) => Math.min(p + 1, totalAdminPages))}
+      disabled={adminPage === totalAdminPages}
+      className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+    >
+      →
+    </button>
+  </div>
+)}
               </div>
 
               {/* Modal Detail Surat */}

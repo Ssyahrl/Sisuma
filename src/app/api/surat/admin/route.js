@@ -21,14 +21,10 @@ async function getUser(req) {
   const token = authHeader.replace("Bearer ", "");
 
   try {
-    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
-    
-    // Validasi expiry
-    if (!payload.sub || payload.exp < Math.floor(Date.now() / 1000)) {
-      return { user: null, error: new Error("Token expired") };
-    }
-    
-    return { user: { id: payload.sub, email: payload.email }, error: null };
+    const supabase = getSupabaseAdmin();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return { user: null, error: error || new Error("No user") };
+    return { user: { id: user.id, email: user.email }, error: null };
   } catch {
     return { user: null, error: new Error("Invalid token") };
   }
@@ -121,7 +117,18 @@ export async function GET(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+
+
     const supabase = getSupabaseAdmin();
+
+    // ← TAMBAH INI: cek semua surat tanpa filter
+    const { data: allSurat } = await supabase
+      .from("surat")
+      .select("id, user_id, tujuan, status")
+      .not("tujuan", "is", null)
+      .limit(5);
+  
+
     const { data, error } = await supabase
       .from("surat")
       .select(`

@@ -185,7 +185,7 @@ export async function resetAllFakultasCounters() {
     .delete()
     .in("user_id", userIds)
     .eq("tahun", tahun)
-    .eq("jenis_surat", "FAKULTAS");
+    .in("jenis_surat", ["SK", "KT"]);
 
   if (error) throw new Error(error.message);
   

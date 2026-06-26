@@ -60,21 +60,53 @@ export async function createUser(formData) {
     return { ok: false, message: "NIP harus 6 digit." };
   }
   if (password.length < 8 || password.length > 12) {
-  return { ok: false, message: "Password harus 8-12 karakter." };
-}
-if (!/[A-Z]/.test(password)) {
-  return { ok: false, message: "Password harus mengandung minimal 1 huruf kapital." };
-}
-if (!/[0-9]/.test(password)) {
-  return { ok: false, message: "Password harus mengandung minimal 1 angka." };
-}
-if (/[\s'";\-\-\/\*\\]/.test(password)) {
-  return { ok: false, message: "Password mengandung karakter yang tidak diizinkan." };
-}
+    return { ok: false, message: "Password harus 8-12 karakter." };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { ok: false, message: "Password harus mengandung minimal 1 huruf kapital." };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { ok: false, message: "Password harus mengandung minimal 1 angka." };
+  }
+  if (/[\s'";\-\-\/\*\\]/.test(password)) {
+    return { ok: false, message: "Password mengandung karakter yang tidak diizinkan." };
+  }
   if (role === "FAKULTAS" && !prefix) {
     return {
       ok: false,
       message: "Kode prefix wajib diisi untuk role Fakultas.",
+    };
+  }
+
+  // 1b. Cek duplikat NAMA (semua role) dan NIP/email sebelum bikin akun
+  const { data: existingUsers, error: checkErr } = await supabaseAdmin
+    .from("profiles")
+    .select("id, nama, email");
+
+  if (checkErr) {
+    return {
+      ok: false,
+      message: "Gagal memeriksa data duplikat: " + checkErr.message,
+    };
+  }
+
+  const namaDuplikat = (existingUsers || []).some(
+    (u) => u.nama?.trim().toLowerCase() === nama.toLowerCase(),
+  );
+  if (namaDuplikat) {
+    return {
+      ok: false,
+      message: `Nama "${nama}" sudah digunakan oleh user lain.`,
+    };
+  }
+
+  const nipDuplikat = (existingUsers || []).some(
+    (u) => u.email?.toLowerCase() === email.toLowerCase(),
+  );
+  if (nipDuplikat) {
+    return {
+      ok: false,
+      message: `NIP "${nip}" sudah digunakan oleh user lain.`,
     };
   }
 
@@ -146,17 +178,17 @@ export async function updateUserRole(userId, newRole) {
  */
 export async function updateUserPassword(userId, newPassword) {
   if (!newPassword || newPassword.length < 8 || newPassword.length > 12) {
-  return { ok: false, message: "Password harus 8-12 karakter." };
-}
-if (!/[A-Z]/.test(newPassword)) {
-  return { ok: false, message: "Password harus mengandung minimal 1 huruf kapital." };
-}
-if (!/[0-9]/.test(newPassword)) {
-  return { ok: false, message: "Password harus mengandung minimal 1 angka." };
-}
-if (!/^[A-Za-z0-9@#$%^&*!+=\-_.]+$/.test(newPassword)) {
-  return { ok: false, message: "Password mengandung karakter yang tidak diizinkan." };
-}
+    return { ok: false, message: "Password harus 8-12 karakter." };
+  }
+  if (!/[A-Z]/.test(newPassword)) {
+    return { ok: false, message: "Password harus mengandung minimal 1 huruf kapital." };
+  }
+  if (!/[0-9]/.test(newPassword)) {
+    return { ok: false, message: "Password harus mengandung minimal 1 angka." };
+  }
+  if (!/^[A-Za-z0-9@#$%^&*!+=\-_.]+$/.test(newPassword)) {
+    return { ok: false, message: "Password mengandung karakter yang tidak diizinkan." };
+  }
 
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
     password: newPassword,
@@ -205,7 +237,9 @@ export async function deleteUser(userId) {
   revalidatePath("/dashboard/settings");
 
   return { ok: true, message: "User berhasil dihapus." };
-}// ==========================================
+}
+
+// ==========================================
 // PENGATURAN FAKULTAS (KHUSUS ROLE FAKULTAS)
 // ==========================================
 

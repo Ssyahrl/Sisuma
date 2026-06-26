@@ -8,12 +8,12 @@ import { COLORS, DEFAULT_FORMAT } from "./constants";
 // ==========================================
 // 1. KOMPONEN: KARTU FAKULTAS (FakultasCard)
 // ==========================================
-function FakultasCard({ f, nextNumber = "001" }) {
+function FakultasCard({ f, nextNumbers = { SK: "001", KT: "001" } }) {
   const displayName = f.slug.replace(/_/g, " ");
   const prefix      = f.prefix || f.slug;
 
   const makeContoh = (jenis) => DEFAULT_FORMAT
-    .replace("{NOMOR_URUT:3}", nextNumber)
+    .replace("{NOMOR_URUT:3}", nextNumbers[jenis] ?? "001")
     .replace("{JENIS}",        jenis)
     .replace("{PREFIX}",       prefix)
     .replace("{BULAN_ROMAWI}", "V")
@@ -139,7 +139,7 @@ export default function FakultasSection() {
       ) : (
         <>
           {fakultasList.map((f) => (
-            <FakultasCard key={f.slug} f={f} nextNumber={f.nextNumber ?? "001"} />
+            <FakultasCard key={f.slug} f={f} nextNumbers={f.nextNumbers ?? { SK: "001", KT: "001" }} />
           ))}
 
           {/* Tombol Reset */}
